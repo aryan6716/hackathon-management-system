@@ -1,6 +1,6 @@
 // backend/models/Score.js
 
-const { pool } = require('../config/db');
+const { getPool } = require('../config/db');
 
 // ======================
 // Simple in-memory cache (5 sec)
@@ -14,7 +14,7 @@ class Score {
   // ======================
   static async submitScore({ submission_id, judge_id, score, feedback }) {
     try {
-      await pool.execute(
+      await getPool().execute(
         `INSERT INTO scores (submission_id, judge_id, score, feedback) 
          VALUES (?, ?, ?, ?)
          ON DUPLICATE KEY UPDATE 
@@ -39,7 +39,7 @@ class Score {
   // ======================
   static async getScoresBySubmission(submission_id) {
     try {
-      const [rows] = await pool.execute(
+      const [rows] = await getPool().execute(
         `SELECT sc.id, sc.score, sc.feedback, sc.scored_at,
                 u.name AS judge_name
          FROM scores sc
@@ -104,7 +104,7 @@ class Score {
       params.push(limit.toString());
       params.push(offset.toString());
 
-      const [rows] = await pool.execute(query, params);
+      const [rows] = await getPool().execute(query, params);
 
       // 🧠 Save to cache
       leaderboardCache.set(cacheKey, {

@@ -56,12 +56,18 @@ app.use('/api/stats', statsRoutes);
 // Health Check
 // =====================
 app.get('/api/health', (req, res) => {
-  const pool = getPool();
+  let dbStatus = "disconnected";
+  try {
+    getPool();
+    dbStatus = "connected";
+  } catch (err) {
+    // DB not initialized
+  }
 
   res.json({
     status: "OK",
     server: "running",
-    database: pool ? "connected" : "disconnected"
+    database: dbStatus
   });
 });
 
@@ -94,19 +100,18 @@ app.use((err, req, res, next) => {
 // =====================
 const startServer = async () => {
   try {
-    // 🔥 IMPORTANT FIX: CONNECT DB FIRST
+    // 🔥 CONNECT DB FIRST
     await connectDB();
-
-    app.listen(PORT, () => {
-      console.log(`\n🚀 HackathonHub API running on port ${PORT}`);
-      console.log(`🌍 Live URL: https://hackathonhub.up.railway.app`);
-      console.log(`📋 Health: /api/health`);
-    });
-
   } catch (error) {
-    console.error("❌ Failed to start server:", error.message);
-    process.exit(1);
+    console.error("❌ Failed to connect to DB on startup:", error.message);
+    // Ensure we don't crash, let routes throw "DB not Initialized"
   }
+
+  app.listen(PORT, () => {
+    console.log(`\n🚀 HackathonHub API running on port ${PORT}`);
+    console.log(`🌍 Live URL: https://hackathonhub.up.railway.app`);
+    console.log(`📋 Health: /api/health`);
+  });
 };
 
 startServer();

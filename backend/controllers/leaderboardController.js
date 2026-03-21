@@ -43,10 +43,14 @@ const submitScore = asyncHandler(async (req, res) => {
 // GET /api/leaderboard/:eventId?
 // Returns full leaderboard
 const getLeaderboard = asyncHandler(async (req, res) => {
-  const { getDbStatus } = require('../config/db');
+  let dbConnected = false;
+  try {
+    require('../config/db').getPool();
+    dbConnected = true;
+  } catch(e) {}
 
   // ✅ Fallback if DB not ready
-  if (!getDbStatus()) {
+  if (!dbConnected) {
     return res.json({
       success: true,
       message: 'Mock leaderboard fetched successfully',

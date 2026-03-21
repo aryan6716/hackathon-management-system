@@ -1,6 +1,6 @@
 // backend/models/Submission.js
 
-const { pool } = require('../config/db');
+const { getPool } = require('../config/db');
 
 class Submission {
 
@@ -9,7 +9,7 @@ class Submission {
   // ======================
   static async submit({ team_id, event_id, title, description, github_link }) {
     try {
-      const [result] = await pool.execute(
+      const [result] = await getPool().execute(
         `INSERT INTO submissions (team_id, event_id, title, description, github_link) 
          VALUES (?, ?, ?, ?, ?)`,
         [team_id, event_id || null, title, description, github_link]
@@ -31,7 +31,7 @@ class Submission {
     try {
       if (!updates.length) throw new Error('No fields to update');
 
-      await pool.execute(
+      await getPool().execute(
         `UPDATE submissions SET ${updates.join(', ')} WHERE id = ?`,
         values
       );
@@ -50,7 +50,7 @@ class Submission {
   // ======================
   static async findById(id) {
     try {
-      const [rows] = await pool.execute(`
+      const [rows] = await getPool().execute(`
         SELECT 
           s.id,
           s.title,
@@ -86,7 +86,7 @@ class Submission {
   // ======================
   static async findByTeam(team_id) {
     try {
-      const [rows] = await pool.execute(
+      const [rows] = await getPool().execute(
         `SELECT id FROM submissions WHERE team_id = ?`,
         [team_id]
       );
@@ -105,7 +105,7 @@ class Submission {
   // ======================
   static async verifyTeamAccess(submission_id, user_id) {
     try {
-      const [rows] = await pool.execute(`
+      const [rows] = await getPool().execute(`
         SELECT s.id 
         FROM submissions s
         JOIN teams t ON s.team_id = t.id
@@ -235,7 +235,7 @@ class Submission {
       }
 
       console.log("FINAL PARAMS:", { user_id, limit: Number(limit), offset: Number(offset) });
-      const [rows] = await pool.execute(query, params);
+      const [rows] = await getPool().execute(query, params);
       return rows;
 
     } catch (error) {

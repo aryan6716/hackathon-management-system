@@ -21,10 +21,14 @@ const submitProject = asyncHandler(async (req, res) => {
     });
   }
 
-  const { getDbStatus } = require('../config/db');
+  let dbConnected = false;
+  try {
+    require('../config/db').getPool();
+    dbConnected = true;
+  } catch(e) {}
 
   // ✅ Mock fallback
-  if (!getDbStatus()) {
+  if (!dbConnected) {
     return res.status(201).json({
       success: true,
       message: 'Submission successful (Mock Mode)',
@@ -162,10 +166,14 @@ const updateProject = asyncHandler(async (req, res) => {
  * GET /api/submissions
  */
 const getAllProjects = asyncHandler(async (req, res) => {
-  const { getDbStatus } = require('../config/db');
+  let dbConnected = false;
+  try {
+    require('../config/db').getPool();
+    dbConnected = true;
+  } catch(e) {}
 
   // ✅ Mock fallback
-  if (!getDbStatus()) {
+  if (!dbConnected) {
     return res.json({
       success: true,
       message: 'Mock submissions fetched',

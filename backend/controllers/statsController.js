@@ -1,10 +1,16 @@
 // backend/controllers/statsController.js
-const { pool, getDbStatus } = require('../config/db');
+const { getPool } = require('../config/db');
 const asyncHandler = require('../middleware/asyncHandler');
 
 // GET /api/stats
 const getStats = asyncHandler(async (req, res) => {
-  if (!getDbStatus()) {
+  let dbConnected = false;
+  try {
+    getPool();
+    dbConnected = true;
+  } catch (err) {}
+
+  if (!dbConnected) {
     return res.json({ 
       success: true, 
       data: { totalUsers: 8, activeEvents: 2, totalTeams: 5, totalProjects: 3 },
@@ -12,10 +18,10 @@ const getStats = asyncHandler(async (req, res) => {
     });
   }
 
-  const [users] = await pool.execute('SELECT COUNT(*) as count FROM users');
-  const [events] = await pool.execute('SELECT COUNT(*) as count FROM events WHERE end_date > NOW()');
-  const [teams] = await pool.execute('SELECT COUNT(*) as count FROM teams');
-  const [projects] = await pool.execute('SELECT COUNT(*) as count FROM submissions');
+  const [users] = await getPool().execute('SELECT COUNT(*) as count FROM users');
+  const [events] = await getPool().execute('SELECT COUNT(*) as count FROM events WHERE end_date > NOW()');
+  const [teams] = await getPool().execute('SELECT COUNT(*) as count FROM teams');
+  const [projects] = await getPool().execute('SELECT COUNT(*) as count FROM submissions');
 
   res.json({
     success: true,
