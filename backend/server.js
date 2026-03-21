@@ -5,7 +5,7 @@ const express = require('express');
 const cors = require('cors');
 require('dotenv').config();
 
-const { testConnection, initDatabase, getDbStatus } = require('./config/db');
+const { connectDB, getPool } = require('./config/db');
 
 const authRoutes = require('./routes/authRoutes');
 const userRoutes = require('./routes/userRoutes');
@@ -22,19 +22,19 @@ const PORT = process.env.PORT || 8000;
 // Middleware
 // =====================
 
-// Enable CORS for frontend
+// ✅ FIXED CORS (IMPORTANT for deployed frontend)
 app.use(cors({
-  origin: "http://localhost:5173",
+  origin: [
+    "http://localhost:5173",
+    "https://hackathonhub.vercel.app" // apna frontend domain add karo
+  ],
   credentials: true
-}))
+}));
 
-// Parse JSON request bodies
 app.use(express.json());
-
-// Parse URL-encoded bodies
 app.use(express.urlencoded({ extended: true }));
 
-// Simple request logger
+// Logger
 app.use((req, res, next) => {
   console.log(`${new Date().toISOString()} | ${req.method} ${req.path}`);
   next();
@@ -48,16 +48,20 @@ app.use('/api/users', userRoutes);
 app.use('/api/events', eventRoutes);
 app.use('/api/teams', teamRoutes);
 app.use('/api/submissions', submissionRoutes);
-app.use('/api/projects', submissionRoutes); // Alias for backward compatibility
+app.use('/api/projects', submissionRoutes);
 app.use('/api/leaderboard', leaderboardRoutes);
 app.use('/api/stats', statsRoutes);
 
+// =====================
 // Health Check
+// =====================
 app.get('/api/health', (req, res) => {
-  res.json({ 
+  const pool = getPool();
+
+  res.json({
     status: "OK",
     server: "running",
-    database: getDbStatus() ? "connected" : "disconnected (mock mode active)"
+    database: pool ? "connected" : "disconnected"
   });
 });
 
@@ -65,8 +69,8 @@ app.get('/api/health', (req, res) => {
 // 404 Handler
 // =====================
 app.use('*', (req, res) => {
-  res.status(404).json({ 
-    success: false, 
+  res.status(404).json({
+    success: false,
     data: null,
     message: `Route ${req.originalUrl} not found.`
   });
@@ -77,10 +81,11 @@ app.use('*', (req, res) => {
 // =====================
 app.use((err, req, res, next) => {
   console.error('Unhandled error:', err);
-  res.status(err.status || 500).json({ 
-    success: false, 
+
+  res.status(err.status || 500).json({
+    success: false,
     data: null,
-    message: err.message || 'Internal server error.' 
+    message: err.message || 'Internal server error.'
   });
 });
 
@@ -88,28 +93,20 @@ app.use((err, req, res, next) => {
 // Start Server
 // =====================
 const startServer = async () => {
-  const connected = await testConnection();
-  if (connected) {
-    await initDatabase();
+  try {
+    // 🔥 IMPORTANT FIX: CONNECT DB FIRST
+    await connectDB();
+
+    app.listen(PORT, () => {
+      console.log(`\n🚀 HackathonHub API running on port ${PORT}`);
+      console.log(`🌍 Live URL: https://hackathonhub.up.railway.app`);
+      console.log(`📋 Health: /api/health`);
+    });
+
+  } catch (error) {
+    console.error("❌ Failed to start server:", error.message);
+    process.exit(1);
   }
-
-  const server = app.listen(PORT, () => {
-    console.log(`\n🚀 HackathonHub API Server running on http://localhost:${PORT}`);
-    console.log(`Server running on http://localhost:8000`); // Explicit required log
-    console.log(`📋 Health check: http://localhost:${PORT}/api/health`);
-  });
-
-  // Handle Port Errors (EADDRINUSE)
-  server.on('error', (error) => {
-    if (error.code === 'EADDRINUSE') {
-      console.error(`\n❌ ERROR: Port ${PORT} is already in use.`);
-      console.error(`💡 Suggestion: Kill the existing process running on this port.`);
-      console.error(`👉 Run: lsof -i :${PORT} followed by kill -9 <PID>`);
-      process.exit(1);
-    } else {
-      console.error('Server error:', error);
-    }
-  });
 };
 
 startServer();
