@@ -1,0 +1,177 @@
+/* ── Theme Variables ─────────────────────────────────────────────── */
+/* Applied to :root (via .theme-* class on <html>) */
+
+/* Dark – default */
+:root,
+.theme-dark {
+  --bg-primary:   #0B0F1A;
+  --bg-secondary: #0d121f;
+  --card-bg:      rgba(255, 255, 255, 0.05); /* User requested glass */
+  --sidebar-bg:   #0B0F1A;
+  --border:       rgba(255, 255, 255, 0.1);
+  --text-primary: #E5E7EB;
+  --text-muted:   #9CA3AF;
+}
+
+/* Darker – deeper tones */
+.theme-darker {
+  --bg-primary:   #0B0F1A; /* Same for layout cohesion */
+  --bg-secondary: #070a12;
+  --card-bg:      rgba(255, 255, 255, 0.03);
+  --sidebar-bg:   #070a12;
+  --border:       rgba(255, 255, 255, 0.08);
+  --text-primary: #E5E7EB;
+  --text-muted:   #9CA3AF;
+}
+
+/* OLED – pure black */
+.theme-oled {
+  --bg-primary:   #000000;
+  --bg-secondary: #05070c;
+  --card-bg:      rgba(255, 255, 255, 0.07);
+  --sidebar-bg:   #000000;
+  --border:       rgba(255, 255, 255, 0.12);
+  --text-primary: #FFFFFF;
+  --text-muted:   #a1a1aa;
+}
+
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+@layer base {
+  * {
+    box-sizing: border-box;
+  }
+
+  html {
+    scroll-behavior: smooth;
+  }
+
+  body {
+    font-family: 'DM Sans', sans-serif;
+    background-color: var(--bg-primary);
+    color: var(--text-primary);
+    overflow-x: hidden;
+    -webkit-font-smoothing: antialiased;
+    -moz-osx-font-smoothing: grayscale;
+  }
+
+  ::-webkit-scrollbar {
+    width: 4px;
+    height: 4px;
+  }
+
+  ::-webkit-scrollbar-track {
+    background: transparent;
+  }
+
+  ::-webkit-scrollbar-thumb {
+    background: rgba(124, 92, 255, 0.4);
+    border-radius: 2px;
+  }
+
+  ::-webkit-scrollbar-thumb:hover {
+    background: rgba(124, 92, 255, 0.6);
+  }
+}
+
+@layer components {
+  .glass-card {
+    background-color: var(--card-bg);
+    backdrop-filter: blur(12px);
+    border: 1px solid var(--border);
+    border-radius: 16px;
+    box-shadow: 0 8px 32px rgba(0,0,0,0.4);
+  }
+
+  .glass-card-hover {
+    @apply transition-all duration-300;
+    /* We'll handle hover states naturally via Framer motion natively inside components */
+  }
+
+  .btn-primary {
+    @apply inline-flex items-center justify-center gap-2 px-6 py-3 rounded-xl font-display font-600 text-sm text-white
+           bg-gradient-brand shadow-brand transition-all duration-200;
+  }
+
+  .btn-secondary {
+    @apply inline-flex items-center justify-center gap-2 px-6 py-3 rounded-xl font-display font-500 text-sm text-slate-300
+           bg-dark-700/50 border border-dark-500 transition-all duration-200;
+  }
+
+  .btn-ghost {
+    @apply inline-flex items-center justify-center gap-2 px-4 py-3 rounded-lg text-sm text-slate-400
+           transition-all duration-200 hover:text-white hover:bg-dark-700/50;
+  }
+
+  .input-field {
+    @apply w-full bg-dark-700/70 border border-dark-500 rounded-xl px-4 py-3 text-sm text-slate-200
+           placeholder:text-slate-600 outline-none transition-all duration-200
+           focus:border-brand-violet/60 focus:ring-2 focus:ring-brand-violet/10 focus:bg-dark-700;
+  }
+
+  .stat-card {
+    @apply glass-card p-5 flex flex-col gap-3;
+  }
+
+  .badge {
+    @apply inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-xs font-medium;
+  }
+
+  .badge-active {
+    @apply badge bg-emerald-500/15 text-emerald-400 border border-emerald-500/20;
+  }
+
+  .badge-upcoming {
+    @apply badge bg-blue-500/15 text-blue-400 border border-blue-500/20;
+  }
+
+  .badge-completed {
+    @apply badge bg-slate-500/15 text-slate-400 border border-slate-500/20;
+  }
+
+  .badge-featured {
+    @apply badge bg-amber-500/15 text-amber-400 border border-amber-500/20;
+  }
+
+  .sidebar-item {
+    @apply flex items-center gap-3 px-3 py-2.5 rounded-xl text-sm font-body font-medium text-slate-400
+           transition-all duration-200 cursor-pointer
+           hover:text-white hover:bg-dark-700/80;
+  }
+
+  .sidebar-item-active {
+    @apply sidebar-item text-white bg-gradient-to-r from-brand-purple/20 to-brand-blue/10
+           border border-brand-violet/20 shadow-sm;
+  }
+
+  .section-title {
+    @apply font-display font-700 text-lg text-white;
+  }
+
+  .section-subtitle {
+    @apply text-sm text-slate-500;
+  }
+
+  .divider {
+    @apply border-t border-dark-600/60 my-4;
+  }
+
+  .gradient-text {
+    @apply bg-gradient-to-r from-brand-violet to-brand-blue bg-clip-text text-transparent;
+  }
+}
+
+@layer utilities {
+  .font-600 { font-weight: 600; }
+  .font-700 { font-weight: 700; }
+  .font-500 { font-weight: 500; }
+
+  .text-balance { text-wrap: balance; }
+
+  .animation-delay-100 { animation-delay: 0.1s; }
+  .animation-delay-200 { animation-delay: 0.2s; }
+  .animation-delay-300 { animation-delay: 0.3s; }
+  .animation-delay-400 { animation-delay: 0.4s; }
+}

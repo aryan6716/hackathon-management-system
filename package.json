@@ -1,12 +1,14 @@
 {
-  "name": "hackathon-management-system",
+  "name": "hackathonhub",
   "version": "1.0.0",
-  "description": "A secure and scalable web-based Hackathon Management System that enables organizers to create hackathons, participants to form teams and submit projects, and judges to evaluate submissions.",
-  "main": "index.js",
+  "private": true,
   "scripts": {
-    "test": "echo \"Error: no test specified\" && exit 1"
+    "dev": "concurrently -k -n BACKEND,FRONTEND -c green,cyan \"npm run backend\" \"npm run frontend\"",
+    "backend": "npx kill-port 8000 >/dev/null 2>&1 || true && cd backend && npm run dev",
+    "frontend": "npx kill-port 5173 >/dev/null 2>&1 || true && cd frontend && npm run dev"
   },
-  "keywords": [],
-  "author": "",
-  "license": "ISC"
+  "devDependencies": {
+    "concurrently": "^8.2.2",
+    "kill-port": "^2.0.1"
+  }
 }
