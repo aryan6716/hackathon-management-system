@@ -6,9 +6,9 @@ import { motion, AnimatePresence } from 'framer-motion'
 export function Button({ variant = 'primary', size = 'md', children, className, loading, ...props }) {
   const base = 'inline-flex items-center justify-center gap-2 font-display font-600 transition-colors duration-200 disabled:opacity-50 disabled:cursor-not-allowed'
   const variants = {
-    primary: 'bg-gradient-brand text-white shadow-brand rounded-xl',
-    secondary: 'bg-dark-700 border border-dark-500 text-slate-300 rounded-xl hover:text-white',
-    ghost: 'text-slate-400 rounded-lg hover:text-white',
+    primary: 'bg-gradient-brand text-white shadow-[0_8px_32px_rgba(124,92,255,0.4)] hover:shadow-[0_12px_48px_rgba(124,92,255,0.6)] rounded-xl border border-white/10',
+    secondary: 'bg-white/5 border border-white/10 text-slate-300 rounded-xl hover:text-white hover:bg-white/10',
+    ghost: 'text-slate-400 rounded-lg hover:text-white hover:bg-white/5',
     danger: 'bg-red-500/10 border border-red-500/20 text-red-400 rounded-xl hover:bg-red-500/20',
     success: 'bg-emerald-500/10 border border-emerald-500/20 text-emerald-400 rounded-xl hover:bg-emerald-500/20',
   }
@@ -118,11 +118,11 @@ export function Input({ label, error, icon: Icon, className, ...props }) {
         )}
         <input
           className={clsx(
-            'w-full bg-dark-800/50 backdrop-blur-sm border border-glass-border rounded-xl px-4 py-3.5 text-sm text-slate-200',
-            'placeholder:text-slate-600 outline-none transition-all duration-200',
-            'focus:border-brand-violet/50 focus:ring-4 focus:ring-brand-violet/10 focus:bg-dark-700/80',
+            'w-full bg-white/5 backdrop-blur-xl border border-white/10 rounded-xl px-4 py-3.5 text-sm text-white',
+            'placeholder:text-slate-400 outline-none transition-all duration-300 shadow-inner',
+            'focus:border-indigo-500 focus:ring-2 focus:ring-indigo-500/50 focus:bg-white/10 focus:scale-[1.01]',
             Icon && 'pl-11',
-            error && 'border-red-500/50 focus:border-red-500/60 focus:ring-red-500/10',
+            error && 'border-red-500/50 focus:border-red-500 focus:ring-red-500/30 animate-shake',
             className
           )}
           {...props}
