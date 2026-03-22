@@ -100,7 +100,7 @@ export default function LeaderboardPage() {
     const fetchLeaderboard = async () => {
       try {
         const data = await apiGet('/leaderboard')
-        setLeaderboard(data || [])
+        setLeaderboard(Array.isArray(data) ? data : [])
       } catch (err) {
         console.error(err)
       } finally {

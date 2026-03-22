@@ -40,6 +40,9 @@ export default function Dashboard() {
           safeFetch("/stats"),
           safeFetch("/leaderboard"),
         ]);
+        
+        console.log("📊 API Response [Stats]:", statsData);
+        console.log("🏆 API Response [Leaderboard]:", leaderboardData);
 
         setStats({
           users: statsData?.totalUsers || 0,
@@ -48,11 +51,12 @@ export default function Dashboard() {
           projects: statsData?.totalProjects || 0,
         });
 
+        const safeLeaderboard = Array.isArray(leaderboardData) ? leaderboardData : [];
         setLeaderboard(
-          (leaderboardData || []).slice(0, 5).map((l, i) => ({
+          safeLeaderboard.slice(0, 5).map((l, i) => ({
             rank: i + 1,
             name: l.team_name || "Unknown",
-            score: l.final_score || 0,
+            score: l.final_score || l.score || l.avg_score || 0,
           }))
         );
       } catch (err) {

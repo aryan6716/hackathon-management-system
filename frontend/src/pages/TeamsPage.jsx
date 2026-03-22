@@ -76,7 +76,7 @@ function CreateTeamForm({ onCreated }) {
 
   useEffect(() => {
     apiGet('/events').then(data => {
-      const events = data.events || data || []
+      const events = Array.isArray(data) ? data : [];
       setHackathons(events.map(e => ({ value: e.id.toString(), label: e.name })))
     }).catch(console.error)
   }, [])

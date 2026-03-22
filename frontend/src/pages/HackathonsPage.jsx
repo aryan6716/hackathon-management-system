@@ -103,9 +103,12 @@ export default function HackathonsPage() {
         setLoading(true)
         const data = await apiGet('/events')
         
+        console.log("📅 API Response [Hackathons]:", data);
+        
         if (!isMounted) return
 
-        const events = Array.isArray(data) ? data : (data.events || data.data || [])
+        // 🛡️ Safe array extraction
+        const events = Array.isArray(data) ? data : [];
         setHackathons(events)
       } catch (err) {
         console.error(err)
@@ -119,9 +122,11 @@ export default function HackathonsPage() {
     return () => { isMounted = false }
   }, [])
 
+  const safeHackathons = Array.isArray(hackathons) ? hackathons : [];
+  
   // 🔍 FILTER LOGIC
   const filtered = useMemo(() => {
-    return hackathons.filter((h) => {
+    return safeHackathons.filter((h) => {
       const matchesSearch = h.name.toLowerCase().includes(search.toLowerCase()) || 
                            h.description.toLowerCase().includes(search.toLowerCase())
       const matchesStatus =
@@ -130,7 +135,7 @@ export default function HackathonsPage() {
     })
   }, [hackathons, search, status])
 
-  const featured = filtered.filter(h => h.status === 'active').slice(0, 2)
+  const featured = filtered.filter(h => h?.status?.toLowerCase() === 'active').slice(0, 2)
   const rest = filtered.filter(h => !featured.find(f => f.id === h.id))
 
   if (error) {
