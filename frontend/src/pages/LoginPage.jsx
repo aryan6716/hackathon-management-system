@@ -14,7 +14,6 @@ export default function LoginPage() {
   const { login } = useAuth()
   const { showToast } = useToast()
 
-  // ✅ Redirect after login
   const from = location.state?.from?.pathname || "/dashboard"
 
   const [form, setForm] = useState({ email: '', password: '' })
@@ -35,7 +34,7 @@ export default function LoginPage() {
     setError('')
 
     if (!form.email || !form.password) {
-      setError('Please fill all fields.')
+      setError('⚠️ Please fill all fields')
       triggerShake()
       return
     }
@@ -43,22 +42,24 @@ export default function LoginPage() {
     try {
       setLoading(true)
 
-      const res = await apiPost('/auth/login', form)
+      // ✅ FIXED PAYLOAD
+      const res = await apiPost('/auth/login', {
+        email: form.email,
+        password: form.password
+      })
 
-      // ✅ CRITICAL FIX (backend structure)
-      const token = res?.data?.token
-      const user = res?.data?.user
+      // ✅ FIXED RESPONSE
+      const token = res?.token
+      const user = res?.user
 
       if (!token || !user) {
         throw new Error("Invalid server response")
       }
 
-      // ✅ Save auth
       login(token, user)
 
-      showToast('Login successful 🎉', 'success')
+      showToast('🎉 Login successful!', 'success')
 
-      // ✅ Redirect
       navigate(from, { replace: true })
 
     } catch (err) {
@@ -81,10 +82,9 @@ export default function LoginPage() {
       >
 
         <h2 className="text-2xl font-bold text-center mb-6">
-          Welcome back
+          Welcome back 👋
         </h2>
 
-        {/* Error */}
         <AnimatePresence>
           {error && (
             <motion.div
@@ -100,7 +100,6 @@ export default function LoginPage() {
 
         <form onSubmit={handleLogin} className="space-y-4">
 
-          {/* Email */}
           <Input
             type="email"
             placeholder="Email"
@@ -109,7 +108,6 @@ export default function LoginPage() {
             required
           />
 
-          {/* Password */}
           <div className="relative">
             <input
               type={showPwd ? 'text' : 'password'}
@@ -129,7 +127,6 @@ export default function LoginPage() {
             </button>
           </div>
 
-          {/* Button */}
           <Button type="submit" loading={loading} className="w-full">
             {loading ? "Logging in..." : "Login"}
           </Button>
