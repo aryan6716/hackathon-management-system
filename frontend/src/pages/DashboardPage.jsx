@@ -2,13 +2,13 @@ import React, { useEffect, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { motion } from "framer-motion";
 import { useAuth } from "../context/AuthContext";
-import { Users, Upload, Zap, Activity, AlertCircle } from "lucide-react";
+import { Users, Upload, Zap, Activity, AlertCircle, LogOut } from "lucide-react";
 import { Card, Button } from "../components/ui";
 import { apiGet } from "../utils/api";
 
 export default function Dashboard() {
   const navigate = useNavigate();
-  const { user } = useAuth();
+  const { user, logout } = useAuth();
 
   const [stats, setStats] = useState({
     users: 0,
@@ -89,13 +89,25 @@ export default function Dashboard() {
     <div className="min-h-screen bg-dark-950 text-white p-6 space-y-8">
 
       {/* 🔥 HEADER */}
-      <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }}>
-        <h1 className="text-3xl font-bold">
-          Welcome, {user?.name || "Hacker"} 🚀
-        </h1>
-        <p className="text-gray-400 mt-2">
-          Your hackathon dashboard overview
-        </p>
+      <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} className="flex flex-col md:flex-row md:items-center justify-between gap-4">
+        <div>
+          <h1 className="text-3xl font-bold">
+            Welcome, {user?.name || "Hacker"} 🚀
+          </h1>
+          <p className="text-gray-400 mt-2">
+            Your hackathon dashboard overview
+          </p>
+        </div>
+        <Button 
+          variant="secondary" 
+          onClick={() => {
+            logout();
+            navigate('/login');
+          }}
+          className="flex items-center gap-2 border-red-500/20 text-red-400 hover:bg-red-500/10"
+        >
+          <LogOut size={16} /> Logout
+        </Button>
       </motion.div>
 
       {/* 📊 STATS */}
