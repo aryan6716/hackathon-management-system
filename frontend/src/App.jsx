@@ -106,11 +106,7 @@
 // }
 
 function App() {
-  return (
-    <div style={{ color: "white", padding: "50px" }}>
-      🔥 APP WORKING FINAL CHECK 🔥
-    </div>
-  );
+  return <h1 style={{color:"white"}}>WORKING ✅</h1>;
 }
 
 export default App;
