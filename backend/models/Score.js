@@ -13,8 +13,9 @@ class Score {
   // Submit / Update Score
   // ======================
   static async submitScore({ submission_id, judge_id, score, feedback }) {
+    const pool = getPool();
     try {
-      await getPool().execute(
+      await pool.execute(
         `INSERT INTO scores (submission_id, judge_id, score, feedback) 
          VALUES (?, ?, ?, ?)
          ON DUPLICATE KEY UPDATE 
@@ -38,8 +39,9 @@ class Score {
   // Get scores for one submission
   // ======================
   static async getScoresBySubmission(submission_id) {
+    const pool = getPool();
     try {
-      const [rows] = await getPool().execute(
+      const [rows] = await pool.execute(
         `SELECT sc.id, sc.score, sc.feedback, sc.scored_at,
                 u.name AS judge_name
          FROM scores sc
@@ -61,6 +63,7 @@ class Score {
   // Leaderboard (OPTIMIZED & PAGINATED)
   // ======================
   static async getLeaderboard(event_id, limit = 50, offset = 0) {
+    const pool = getPool();
     try {
       const cacheKey = `board_${event_id || 'all'}_${limit}_${offset}`;
       const cached = leaderboardCache.get(cacheKey);
@@ -104,7 +107,7 @@ class Score {
       params.push(limit.toString());
       params.push(offset.toString());
 
-      const [rows] = await getPool().execute(query, params);
+      const [rows] = await pool.execute(query, params);
 
       // 🧠 Save to cache
       leaderboardCache.set(cacheKey, {

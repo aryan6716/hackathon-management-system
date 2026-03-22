@@ -10,7 +10,8 @@ const seedDatabase = async () => {
     host: process.env.DB_HOST || '127.0.0.1',
     user: process.env.DB_USER || 'root',
     password: process.env.DB_PASSWORD || '',
-    database: DB_NAME
+    database: DB_NAME,
+    port: process.env.DB_PORT ? Number(process.env.DB_PORT) : 3306
   });
 
   console.log('🌱 Starting database seed for HackathonHub...');

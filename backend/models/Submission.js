@@ -8,8 +8,9 @@ class Submission {
   // Create submission
   // ======================
   static async submit({ team_id, event_id, title, description, github_link }) {
+    const pool = getPool();
     try {
-      const [result] = await getPool().execute(
+      const [result] = await pool.execute(
         `INSERT INTO submissions (team_id, event_id, title, description, github_link) 
          VALUES (?, ?, ?, ?, ?)`,
         [team_id, event_id || null, title, description, github_link]
@@ -28,10 +29,11 @@ class Submission {
   // Update submission
   // ======================
   static async update(id, updates, values) {
+    const pool = getPool();
     try {
       if (!updates.length) throw new Error('No fields to update');
 
-      await getPool().execute(
+      await pool.execute(
         `UPDATE submissions SET ${updates.join(', ')} WHERE id = ?`,
         values
       );
@@ -49,8 +51,9 @@ class Submission {
   // Get single submission
   // ======================
   static async findById(id) {
+    const pool = getPool();
     try {
-      const [rows] = await getPool().execute(`
+      const [rows] = await pool.execute(`
         SELECT 
           s.id,
           s.title,
@@ -85,8 +88,9 @@ class Submission {
   // Find by team
   // ======================
   static async findByTeam(team_id) {
+    const pool = getPool();
     try {
-      const [rows] = await getPool().execute(
+      const [rows] = await pool.execute(
         `SELECT id FROM submissions WHERE team_id = ?`,
         [team_id]
       );
@@ -104,8 +108,9 @@ class Submission {
   // Verify access
   // ======================
   static async verifyTeamAccess(submission_id, user_id) {
+    const pool = getPool();
     try {
-      const [rows] = await getPool().execute(`
+      const [rows] = await pool.execute(`
         SELECT s.id 
         FROM submissions s
         JOIN teams t ON s.team_id = t.id
@@ -126,6 +131,7 @@ class Submission {
   // Get all submissions
   // ======================
   static async findAll(role, user_id, limit = 50, offset = 0) {
+    const pool = getPool();
     if (!user_id && role !== 'admin') {
       throw new Error("Unauthorized: user_id is undefined");
     }
@@ -235,7 +241,7 @@ class Submission {
       }
 
       console.log("FINAL PARAMS:", { user_id, limit: Number(limit), offset: Number(offset) });
-      const [rows] = await getPool().execute(query, params);
+      const [rows] = await pool.execute(query, params);
       return rows;
 
     } catch (error) {
