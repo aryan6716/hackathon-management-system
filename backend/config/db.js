@@ -1,31 +1,35 @@
 const mysql = require("mysql2/promise");
 
-let pool = null;
+let pool;
 
 const connectDB = async () => {
   try {
     if (pool) return pool;
 
+    console.log("🔍 ENV CHECK:");
+    console.log("HOST:", process.env.DB_HOST);
+    console.log("USER:", process.env.DB_USER);
+    console.log("DB:", process.env.DB_NAME);
+
     pool = mysql.createPool({
-      host: process.env.MYSQLHOST,
-      user: process.env.MYSQLUSER,
-      password: process.env.MYSQLPASSWORD,
-      database: process.env.MYSQLDATABASE,
-      port: process.env.MYSQLPORT,
+      host: process.env.DB_HOST,
+      user: process.env.DB_USER,
+      password: process.env.DB_PASSWORD,
+      database: process.env.DB_NAME,
+      port: Number(process.env.DB_PORT),
 
       waitForConnections: true,
       connectionLimit: 10,
-      queueLimit: 0,
     });
 
     const conn = await pool.getConnection();
-    console.log("✅ MySQL Connected (Railway Internal)");
+    console.log("✅ MySQL Connected");
     conn.release();
 
     return pool;
 
   } catch (err) {
-    console.error("❌ DB Connection Failed:", err.message);
+    console.error("❌ DB Connection Failed FULL:", err);
     process.exit(1);
   }
 };
