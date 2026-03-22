@@ -105,7 +105,7 @@ export const mockActivity = [
   { id: 3, type: 'rank', text: 'Your team moved to rank #3', time: '1d ago', icon: 'trending-up' },
   { id: 4, type: 'hackathon', text: 'Joined BuildAI 2025 hackathon', time: '2d ago', icon: 'zap' },
   { id: 5, type: 'comment', text: 'Judge reviewed your submission', time: '3d ago', icon: 'message-circle' },
-]
+] 
 
 export const mockSubmissions = [
   {
