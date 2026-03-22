@@ -17,50 +17,54 @@ function HackathonCard({ h, featured }) {
       hover
       onClick={() => navigate(`/hackathons/${h.id || h.event_id}`)}
       className={clsx(
-        'p-5 flex flex-col group h-full',
-        featured && 'border-amber-500/20 bg-gradient-to-br from-amber-500/5 to-dark-800/60 shadow-glow-sm'
+        'p-6 flex flex-col group h-full relative overflow-hidden transition-all duration-500 hover:shadow-[0_8px_40px_rgba(124,92,255,0.15)] bg-dark-800/40 border-white/5',
+        featured && 'border-amber-500/30 bg-gradient-to-br from-amber-500/5 to-dark-800/80 shadow-[0_0_20px_rgba(251,191,36,0.1)]'
       )}
     >
+      <div className="absolute top-0 right-0 w-32 h-32 bg-brand-violet/10 blur-[50px] -mr-16 -mt-16 transition-colors group-hover:bg-brand-violet/20" />
+      
       {featured && (
-        <div className="flex items-center gap-1.5 mb-3">
-          <Star className="w-3 h-3 text-amber-400 fill-amber-400" />
-          <span className="text-[10px] font-bold uppercase tracking-wider text-amber-400">Featured Event</span>
+        <div className="flex items-center gap-1.5 mb-4 relative z-10">
+          <Star className="w-3.5 h-3.5 text-amber-400 fill-amber-400 drop-shadow-md" />
+          <span className="text-[10px] font-black uppercase tracking-widest text-amber-400">Featured Event</span>
         </div>
       )}
 
-      <div className="flex items-start justify-between mb-3 gap-2">
-        <h3 className="font-display font-bold text-white text-lg leading-tight group-hover:text-brand-violet transition-colors">
-          {h.name}
+      <div className="flex items-start justify-between mb-3 gap-3 relative z-10">
+        <h3 className="font-display font-900 text-white text-xl leading-tight group-hover:text-brand-violet transition-colors">
+          {h.name || h.title}
         </h3>
-        <Badge variant={badgeMap[h.status] || 'default'} className="shrink-0">
-          {statusLabels[h.status] || h.status}
+        <Badge variant={badgeMap[h.status?.toLowerCase()] || 'active'} className="shrink-0 shadow-sm">
+          {statusLabels[h.status?.toLowerCase()] || h.status || 'Active'}
         </Badge>
       </div>
 
-      <p className="text-sm text-slate-400 mb-5 flex-1 line-clamp-3 leading-relaxed">
+      <p className="text-sm text-slate-400 mb-6 flex-1 line-clamp-3 leading-relaxed font-medium relative z-10">
         {h.description}
       </p>
 
-      <div className="flex flex-wrap gap-1.5 mb-5">
+      <div className="flex flex-wrap gap-2 mb-6 relative z-10">
         {(h.tags || ['General', 'Code']).map((t, i) => (
-          <Tag key={i}>{t}</Tag>
+          <Tag key={i} className="bg-dark-900/50 border border-white/5 text-slate-300">{t}</Tag>
         ))}
       </div>
 
-      <div className="grid grid-cols-2 gap-4 text-xs text-slate-500 mb-6 bg-dark-700/30 p-3 rounded-xl border border-white/5">
-        <div className="flex items-center gap-2">
-          <Calendar className="w-3.5 h-3.5 text-brand-blue" />
-          <span className="font-medium text-slate-300">{h.date || 'TBD'}</span>
+      <div className="grid grid-cols-2 gap-4 text-xs text-slate-400 mb-6 bg-dark-900/60 p-4 rounded-xl border border-white/5 shadow-inner relative z-10">
+        <div className="flex items-center gap-2.5">
+          <Calendar className="w-4 h-4 text-brand-blue" />
+          <span className="font-bold text-slate-200">{h.start_date ? new Date(h.start_date).toLocaleDateString() : (h.date || 'TBD')}</span>
         </div>
-        <div className="flex items-center gap-2">
-          <Users className="w-3.5 h-3.5 text-brand-purple" />
-          <span className="font-medium text-slate-300">{h.participants || 0} Joined</span>
+        <div className="flex items-center gap-2.5">
+          <Users className="w-4 h-4 text-brand-purple" />
+          <span className="font-bold text-slate-200">{h.team_count || h.participants || 0} Teams</span>
         </div>
       </div>
 
-      <Button variant={featured ? 'primary' : 'secondary'} className="w-full mt-auto group/btn">
-        {h.status === 'completed' ? 'View Results' : 'Explore Event'}
-        <ArrowRight className="ml-2 w-4 h-4 transition-transform group-hover/btn:translate-x-1" />
+      <Button variant={featured ? 'primary' : 'secondary'} className="w-full mt-auto group/btn !rounded-xl relative z-10 overflow-hidden shadow-inner hover:shadow-lg">
+        <span className="relative z-10 flex items-center justify-center">
+            {h.status === 'completed' ? 'View Results' : 'Explore Event'}
+            <ArrowRight className="ml-2 w-4 h-4 transition-transform group-hover/btn:translate-x-1" />
+        </span>
       </Button>
     </Card>
   )
@@ -124,16 +128,17 @@ export default function HackathonsPage() {
 
   const safeHackathons = Array.isArray(hackathons) ? hackathons : [];
   
-  // 🔍 FILTER LOGIC
   const filtered = useMemo(() => {
     return safeHackathons.filter((h) => {
-      const matchesSearch = h.name.toLowerCase().includes(search.toLowerCase()) || 
-                           h.description.toLowerCase().includes(search.toLowerCase())
+      const name = h.name || h.title || '';
+      const desc = h.description || '';
+      const matchesSearch = name.toLowerCase().includes(search.toLowerCase()) || 
+                           desc.toLowerCase().includes(search.toLowerCase())
       const matchesStatus =
         status === 'All' || h.status?.toLowerCase() === status.toLowerCase()
       return matchesSearch && matchesStatus
     })
-  }, [hackathons, search, status])
+  }, [safeHackathons, search, status])
 
   const featured = filtered.filter(h => h?.status?.toLowerCase() === 'active').slice(0, 2)
   const rest = filtered.filter(h => !featured.find(f => f.id === h.id))

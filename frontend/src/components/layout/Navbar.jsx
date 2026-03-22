@@ -4,6 +4,7 @@ import { motion, AnimatePresence } from 'framer-motion'
 import { 
   Menu, Search, Bell
 } from 'lucide-react'
+import { useAuth } from '../../context/AuthContext'
 import { useApp } from '../../context/AppContext'
 import UserProfileDropdown from './UserProfileDropdown'
 import clsx from 'clsx'
@@ -26,7 +27,9 @@ const mockNotifications = [
 
 export default function Navbar() {
   const { toggleMobileSidebar, sidebarCollapsed } = useApp()
+  const { user } = useAuth()
   const { pathname } = useLocation()
+  
   const pageInfo = PAGE_TITLES[pathname] || { title: 'Overview', subtitle: '' }
 
   const [showNotif, setShowNotif] = useState(false)
@@ -34,13 +37,17 @@ export default function Navbar() {
   
   const unreadCount = mockNotifications.filter(n => n.unread).length
 
+  const hour = new Date().getHours()
+  const timeGreeting = hour < 12 ? 'Good Morning' : hour < 18 ? 'Good Afternoon' : 'Good Evening'
+  const firstName = user?.name ? user.name.split(' ')[0] : 'Hacker'
+
   return (
     <motion.header 
       layout
       transition={{ type: "spring", stiffness: 300, damping: 30 }}
       className={clsx(
         'fixed top-0 right-0 h-20 z-30 flex items-center',
-        'bg-dark-900/50 backdrop-blur-xl border-b border-glass-border shadow-glass',
+        'bg-dark-900/60 backdrop-blur-2xl border-b border-white/5 shadow-sm',
         sidebarCollapsed ? 'left-20' : 'left-0 lg:left-64'
       )}
     >
@@ -57,11 +64,11 @@ export default function Navbar() {
 
           <div className="hidden sm:block">
             <motion.h1 
-              key={pageInfo.title}
+              key={pathname === '/dashboard' ? 'greeting' : pageInfo.title}
               initial={{ opacity: 0, y: -5 }} animate={{ opacity: 1, y: 0 }}
               className="font-display font-800 text-white text-xl tracking-tight leading-none"
             >
-              {pageInfo.title}
+              {pathname === '/dashboard' ? `${timeGreeting}, ${firstName} 👋` : pageInfo.title}
             </motion.h1>
             <motion.p 
               key={pageInfo.subtitle}
