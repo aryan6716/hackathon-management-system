@@ -7,13 +7,40 @@ const { connectDB } = require("./config/db");
 const app = express();
 
 // ======================
+// 🔥 CORS CONFIG (FIXED)
+// ======================
+const allowedOrigins = [
+  "http://localhost:5173",
+  "https://hackathonhub.vercel.app",
+  "https://hackathonhub.up.railway.app"
+];
+
+app.use(cors({
+  origin: function (origin, callback) {
+    // allow requests with no origin (mobile apps, postman)
+    if (!origin) return callback(null, true);
+
+    if (allowedOrigins.includes(origin)) {
+      return callback(null, true);
+    } else {
+      return callback(new Error("❌ CORS not allowed"));
+    }
+  },
+  credentials: true,
+  methods: ["GET", "POST", "PUT", "DELETE", "OPTIONS"],
+  allowedHeaders: ["Content-Type", "Authorization"]
+}));
+
+// 🔥 Handle preflight requests
+app.options("*", cors());
+
+// ======================
 // Middleware
 // ======================
-app.use(cors());
 app.use(express.json());
 
 // ======================
-// Health Route
+// Health Check
 // ======================
 app.get("/api/health", (req, res) => {
   res.json({ status: "OK" });
@@ -31,17 +58,25 @@ app.use("/api/leaderboard", require("./routes/leaderboardRoutes"));
 app.use("/api/stats", require("./routes/statsRoutes"));
 
 // ======================
-// Start Server
+// Error Handler (GLOBAL)
+// ======================
+app.use((err, req, res, next) => {
+  console.error("❌ Server Error:", err.message);
+
+  res.status(500).json({
+    success: false,
+    message: err.message || "Internal Server Error"
+  });
+});
+
+// ======================
+// Start Server AFTER DB
 // ======================
 const startServer = async () => {
   try {
-    const db = await connectDB();
+    await connectDB();
 
-    if (!db) {
-      console.log("⚠️ DB not connected (app will still run)");
-    } else {
-      console.log("✅ DB ready");
-    }
+    console.log("✅ DB Connected");
 
     const PORT = process.env.PORT || 5000;
 
@@ -50,14 +85,8 @@ const startServer = async () => {
     });
 
   } catch (err) {
-    console.error("❌ Server start error:", err.message);
-
-    // ❗ DO NOT EXIT
-    const PORT = process.env.PORT || 5000;
-
-    app.listen(PORT, () => {
-      console.log(`⚠️ Server running without DB on port ${PORT}`);
-    });
+    console.error("❌ Failed to start server:", err.message);
+    process.exit(1);
   }
 };
 
