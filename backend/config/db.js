@@ -1,86 +1,82 @@
-const mysql = require("mysql2/promise");
+const mysql = require('mysql2/promise');
 
 let pool = null;
 
 // ======================
-// Create DB Pool
+// Connect DB (Singleton)
 // ======================
 const connectDB = async () => {
   if (pool) {
-    console.log("⚡ DB Pool already exists");
+    console.log("⚡ DB already connected");
     return pool;
   }
 
   try {
     const dbConfig = {
-      host: process.env.MYSQLHOST || process.env.DB_HOST,
-      port: process.env.MYSQLPORT || process.env.DB_PORT || 3306,
-      user: process.env.MYSQLUSER || process.env.DB_USER,
-      password: process.env.MYSQLPASSWORD || process.env.DB_PASSWORD,
-      database: process.env.MYSQLDATABASE || process.env.DB_NAME,
+      host: process.env.DB_HOST,
+      port: process.env.DB_PORT || 3306,
+      user: process.env.DB_USER,
+      password: process.env.DB_PASSWORD,
+      database: process.env.DB_NAME,
 
       waitForConnections: true,
       connectionLimit: 10,
       queueLimit: 0,
     };
 
-    // ======================
-    // Validate ENV
-    // ======================
-    const missingVars = [];
-    if (!dbConfig.host) missingVars.push("MYSQLHOST / DB_HOST");
-    if (!dbConfig.user) missingVars.push("MYSQLUSER / DB_USER");
-    if (!dbConfig.database) missingVars.push("MYSQLDATABASE / DB_NAME");
+    // ✅ Validate ENV
+    const missing = [];
+    if (!dbConfig.host) missing.push("DB_HOST");
+    if (!dbConfig.user) missing.push("DB_USER");
+    if (!dbConfig.database) missing.push("DB_NAME");
 
-    if (missingVars.length > 0) {
-      throw new Error(`Missing DB ENV variables: ${missingVars.join(", ")}`);
+    if (missing.length) {
+      throw new Error(`Missing ENV: ${missing.join(", ")}`);
     }
 
-    // ======================
-    // Create Pool
-    // ======================
+    // ✅ Create pool
     pool = mysql.createPool(dbConfig);
 
-    // ======================
-    // Test Connection
-    // ======================
-    const connection = await pool.getConnection();
+    // ✅ Test connection
+    const conn = await pool.getConnection();
     console.log("✅ MySQL Connected Successfully");
-    connection.release();
+    conn.release();
 
     return pool;
 
   } catch (err) {
     console.error("❌ DB Connection Failed:", err.message);
+
+    // ❗ DO NOT CRASH
     pool = null;
-    throw err;
+
+    return null;
   }
 };
 
 // ======================
-// Safe Pool Getter
+// Get Pool Safely
 // ======================
 const getPool = () => {
   if (!pool) {
-    throw new Error("🚨 DB Pool not initialized. Call connectDB() first.");
+    throw new Error("🚨 DB not initialized");
   }
   return pool;
 };
 
 // ======================
-// Health Check (Optional)
+// Health Check
 // ======================
 const checkDBHealth = async () => {
   try {
     if (!pool) return false;
 
-    const connection = await pool.getConnection();
-    await connection.ping();
-    connection.release();
+    const conn = await pool.getConnection();
+    await conn.ping();
+    conn.release();
 
     return true;
-  } catch (err) {
-    console.error("❌ DB Health Check Failed:", err.message);
+  } catch {
     return false;
   }
 };
