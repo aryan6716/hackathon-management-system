@@ -1,4 +1,4 @@
-const mysql = require('mysql2/promise');
+const mysql = require("mysql2/promise");
 
 let pool = null;
 
@@ -52,10 +52,7 @@ const connectDB = async () => {
 
   } catch (err) {
     console.error("❌ DB Connection Failed:", err.message);
-
-    // Important: reset pool if failed
     pool = null;
-
     throw err;
   }
 };
@@ -65,9 +62,7 @@ const connectDB = async () => {
 // ======================
 const getPool = () => {
   if (!pool) {
-    throw new Error(
-      "🚨 DB Pool not initialized. Call connectDB() before using database."
-    );
+    throw new Error("🚨 DB Pool not initialized. Call connectDB() first.");
   }
   return pool;
 };

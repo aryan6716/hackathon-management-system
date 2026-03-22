@@ -1,37 +1,43 @@
 // backend/controllers/statsController.js
+
 const { getPool } = require('../config/db');
 const asyncHandler = require('../middleware/asyncHandler');
 
 // GET /api/stats
 const getStats = asyncHandler(async (req, res) => {
-  let dbConnected = false;
-  try {
-    getPool();
-    dbConnected = true;
-  } catch (err) {}
+  let pool;
 
-  if (!dbConnected) {
-    return res.json({ 
-      success: true, 
-      data: { totalUsers: 8, activeEvents: 2, totalTeams: 5, totalProjects: 3 },
-      message: 'Mock stats fetched successfully.' 
+  try {
+    pool = getPool();
+  } catch (err) {
+    // ✅ Fallback mock data
+    return res.json({
+      success: true,
+      stats: {
+        totalUsers: 8,
+        activeEvents: 2,
+        totalTeams: 5,
+        totalProjects: 3
+      },
+      message: 'Mock stats fetched'
     });
   }
 
-  const [users] = await getPool().execute('SELECT COUNT(*) as count FROM users');
-  const [events] = await getPool().execute('SELECT COUNT(*) as count FROM events WHERE end_date > NOW()');
-  const [teams] = await getPool().execute('SELECT COUNT(*) as count FROM teams');
-  const [projects] = await getPool().execute('SELECT COUNT(*) as count FROM submissions');
+  // ✅ Use single pool instance
+  const [users] = await pool.execute('SELECT COUNT(*) as count FROM users');
+  const [events] = await pool.execute('SELECT COUNT(*) as count FROM events WHERE end_date > NOW()');
+  const [teams] = await pool.execute('SELECT COUNT(*) as count FROM teams');
+  const [projects] = await pool.execute('SELECT COUNT(*) as count FROM submissions');
 
   res.json({
     success: true,
-    data: {
+    stats: {
       totalUsers: users[0].count,
       activeEvents: events[0].count,
       totalTeams: teams[0].count,
       totalProjects: projects[0].count
     },
-    message: 'Stats fetched successfully.'
+    message: 'Stats fetched successfully'
   });
 });
 

@@ -1,60 +1,57 @@
 // controllers/leaderboardController.js
-// Handles leaderboard calculation and individual scoring
 
 const Score = require('../models/Score');
 const asyncHandler = require('../middleware/asyncHandler');
+const { getPool } = require('../config/db');
 
-// POST /api/leaderboard/score
-// Judges evaluating a submission
+// ======================
+// SUBMIT SCORE
+// ======================
 const submitScore = asyncHandler(async (req, res) => {
   const { submission_id, score, feedback } = req.body;
   const judge_id = req.user?.id;
 
-  // ✅ Validation
   const numScore = parseFloat(score);
+
   if (isNaN(numScore) || numScore < 0 || numScore > 10) {
     return res.status(400).json({
       success: false,
-      message: 'Score must be a number between 0 and 10'
+      message: 'Score must be between 0 and 10'
     });
   }
 
-  // ✅ Safe DB call
-  try {
-    await Score.submitScore({ submission_id, judge_id, score: numScore, feedback });
+  await Score.submitScore({
+    submission_id,
+    judge_id,
+    score: numScore,
+    feedback
+  });
 
-    res.status(201).json({
-      success: true,
-      data: null,
-      message: 'Score recorded successfully'
-    });
-
-  } catch (error) {
-    console.error('Submit score error:', error);
-
-    res.status(500).json({
-      success: false,
-      message: 'Failed to record score'
-    });
-  }
+  res.status(201).json({
+    success: true,
+    message: 'Score recorded successfully'
+  });
 });
 
-
-// GET /api/leaderboard/:eventId?
-// Returns full leaderboard
+// ======================
+// GET LEADERBOARD
+// ======================
 const getLeaderboard = asyncHandler(async (req, res) => {
-  let dbConnected = false;
-  try {
-    require('../config/db').getPool();
-    dbConnected = true;
-  } catch(e) {}
+  let dbConnected = true;
 
-  // ✅ Fallback if DB not ready
+  try {
+    getPool(); // ✅ clean check
+  } catch (e) {
+    dbConnected = false;
+  }
+
+  // ======================
+  // FALLBACK DATA
+  // ======================
   if (!dbConnected) {
     return res.json({
       success: true,
-      message: 'Mock leaderboard fetched successfully',
-      data: [
+      leaderboard: [
         {
           id: 1,
           title: 'AI Health',
@@ -69,7 +66,8 @@ const getLeaderboard = asyncHandler(async (req, res) => {
           avg_score: 8.4,
           judge_count: 2
         }
-      ]
+      ],
+      message: 'Mock leaderboard'
     });
   }
 
@@ -77,28 +75,18 @@ const getLeaderboard = asyncHandler(async (req, res) => {
   const limit = Math.max(1, parseInt(req.query.limit) || 50);
   const offset = Math.max(0, parseInt(req.query.offset) || 0);
 
-  try {
-    const leaderboard = await Score.getLeaderboard(event_id, limit, offset);
+  const leaderboard = await Score.getLeaderboard(event_id, limit, offset);
 
-    const formattedLeaderboard = (leaderboard || []).map(row => ({
-      ...row,
-      avg_score: Number(parseFloat(row.avg_score || 0).toFixed(1))
-    }));
+  const formatted = (leaderboard || []).map(row => ({
+    ...row,
+    avg_score: Number(parseFloat(row.avg_score || 0).toFixed(1))
+  }));
 
-    res.json({
-      success: true,
-      data: formattedLeaderboard,
-      message: 'Leaderboard fetched successfully'
-    });
-
-  } catch (error) {
-    console.error('Leaderboard error:', error);
-
-    res.status(500).json({
-      success: false,
-      message: 'Failed to fetch leaderboard'
-    });
-  }
+  res.json({
+    success: true,
+    leaderboard: formatted,
+    message: 'Leaderboard fetched successfully'
+  });
 });
 
 module.exports = { submitScore, getLeaderboard };
