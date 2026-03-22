@@ -1,14 +1,14 @@
-import React, { useState } from 'react'
+import React, { useState, useEffect } from 'react'
 import { useLocation } from 'react-router-dom'
 import { motion, AnimatePresence } from 'framer-motion'
 import { 
-  Menu, Search, Bell
+  Menu, Search, Bell, X, Command
 } from 'lucide-react'
 import { useAuth } from '../../context/AuthContext'
 import { useApp } from '../../context/AppContext'
 import UserProfileDropdown from './UserProfileDropdown'
 import clsx from 'clsx'
-import { Badge } from '../ui'
+import { Badge, Button } from '../ui'
 
 const PAGE_TITLES = {
   '/dashboard': { title: 'Dashboard', subtitle: 'Overview & Metrics' },
@@ -34,6 +34,7 @@ export default function Navbar() {
 
   const [showNotif, setShowNotif] = useState(false)
   const [searchFocused, setSearchFocused] = useState(false)
+  const [scrolled, setScrolled] = useState(false)
   
   const unreadCount = mockNotifications.filter(n => n.unread).length
 
@@ -41,129 +42,143 @@ export default function Navbar() {
   const timeGreeting = hour < 12 ? 'Good Morning' : hour < 18 ? 'Good Afternoon' : 'Good Evening'
   const firstName = user?.name ? user.name.split(' ')[0] : 'Hacker'
 
+  useEffect(() => {
+    const handleScroll = () => setScrolled(window.scrollY > 10)
+    window.addEventListener('scroll', handleScroll)
+    return () => window.removeEventListener('scroll', handleScroll)
+  }, [])
+
   return (
     <motion.header 
-      layout
-      transition={{ type: "spring", stiffness: 300, damping: 30 }}
+      initial={false}
+      animate={{ 
+        height: scrolled ? 64 : 80,
+        backgroundColor: scrolled ? 'rgba(3, 7, 18, 0.8)' : 'rgba(3, 7, 18, 0.4)'
+      }}
       className={clsx(
-        'fixed top-0 right-0 h-20 z-30 flex items-center',
-        'bg-dark-900/60 backdrop-blur-2xl border-b border-white/5 shadow-sm',
-        sidebarCollapsed ? 'left-20' : 'left-0 lg:left-64'
+        'fixed top-0 right-0 z-30 flex items-center transition-all duration-300 backdrop-blur-xl border-b border-white/[0.05]',
+        sidebarCollapsed ? 'left-20' : 'left-0 lg:left-72'
       )}
     >
-      <div className="flex-1 flex items-center justify-between px-6 lg:px-8 gap-6 h-full">
+      <div className="flex-1 flex items-center justify-between px-6 lg:px-10 h-full">
 
-        {/* LEFT BRANDING */}
-        <div className="flex items-center gap-4">
+        {/* LEFT: Branding/Title */}
+        <div className="flex items-center gap-6">
           <button
             onClick={toggleMobileSidebar}
-            className="lg:hidden p-2.5 rounded-xl text-slate-500 bg-white/5 hover:text-white hover:bg-white/10 transition-colors"
+            className="lg:hidden p-2 rounded-xl text-slate-400 bg-white/5 hover:text-white transition-colors"
           >
             <Menu className="w-5 h-5" />
           </button>
 
           <div className="hidden sm:block">
-            <motion.h1 
-              key={pathname === '/dashboard' ? 'greeting' : pageInfo.title}
-              initial={{ opacity: 0, y: -5 }} animate={{ opacity: 1, y: 0 }}
-              className="font-display font-800 text-white text-xl tracking-tight leading-none"
-            >
-              {pathname === '/dashboard' ? `${timeGreeting}, ${firstName} 👋` : pageInfo.title}
-            </motion.h1>
-            <motion.p 
-              key={pageInfo.subtitle}
-              initial={{ opacity: 0 }} animate={{ opacity: 1 }} transition={{ delay: 0.1 }}
-              className="text-[10px] text-slate-500 mt-1 uppercase tracking-widest font-bold"
-            >
-              {pageInfo.subtitle}
-            </motion.p>
+            <AnimatePresence mode="wait">
+              <motion.div
+                key={pathname}
+                initial={{ opacity: 0, x: -10 }}
+                animate={{ opacity: 1, x: 0 }}
+                exit={{ opacity: 0, x: 10 }}
+                transition={{ duration: 0.2 }}
+              >
+                <h1 className="text-xl font-bold text-white tracking-tight flex items-center gap-2">
+                  {pathname === '/dashboard' ? (
+                    <>
+                      <span>{timeGreeting},</span>
+                      <span className="text-gradient">{firstName}</span>
+                      <span className="animate-bounce">🚀</span>
+                    </>
+                  ) : pageInfo.title}
+                </h1>
+                <p className="text-[10px] text-slate-500 font-bold uppercase tracking-[0.2em] mt-0.5">
+                  {pageInfo.subtitle}
+                </p>
+              </motion.div>
+            </AnimatePresence>
           </div>
         </div>
 
-        {/* RIGHT CONTROLS */}
-        <div className="flex items-center gap-3">
+        {/* RIGHT: Controls */}
+        <div className="flex items-center gap-4">
           
-          {/* SEARCH */}
-          <motion.div 
-            layout
-            className={clsx(
-              'hidden md:flex items-center gap-3 px-4 py-2.5 rounded-xl border transition-colors duration-300',
-              searchFocused
-                ? 'bg-dark-800/80 border-brand-violet/50 shadow-[0_0_30px_rgba(124,92,255,0.15)] ring-2 ring-brand-violet/20 w-80'
-                : 'bg-dark-800/40 border-glass-border w-56 hover:bg-dark-800/60 hover:border-white/10'
-            )}
-          >
-            <Search className={clsx("w-4 h-4 transition-colors", searchFocused ? "text-brand-violet" : "text-slate-500")} />
-            <input
-              type="text"
-              placeholder="Search components..."
-              onFocus={() => setSearchFocused(true)}
-              onBlur={() => setSearchFocused(false)}
-              className="bg-transparent text-sm font-medium text-slate-200 placeholder:text-slate-500 outline-none w-full"
-            />
-            {searchFocused && (
-              <span className="text-[10px] font-bold text-slate-500 bg-white/5 px-1.5 py-0.5 rounded border border-white/10 uppercase">
-                ESC
-              </span>
-            )}
-          </motion.div>
+          {/* SEARCH BAR */}
+          <div className="relative group hidden md:block">
+            <div className={clsx(
+              "absolute inset-0 bg-indigo-500/20 rounded-xl blur-xl transition-opacity duration-300",
+              searchFocused ? "opacity-100" : "opacity-0 invisible"
+            )} />
+            <div className={clsx(
+              "relative flex items-center gap-3 px-4 py-2 rounded-xl border transition-all duration-300",
+              searchFocused 
+                ? "w-80 bg-slate-900 border-indigo-500/50 shadow-2xl" 
+                : "w-64 bg-white/[0.03] border-white/10 hover:border-white/20"
+            )}>
+              <Search className={clsx("w-4 h-4 transition-colors", searchFocused ? "text-indigo-400" : "text-slate-500")} />
+              <input
+                type="text"
+                placeholder="Quick search..."
+                onFocus={() => setSearchFocused(true)}
+                onBlur={() => setSearchFocused(false)}
+                className="bg-transparent text-sm font-medium text-slate-200 placeholder:text-slate-500 outline-none w-full"
+              />
+              <div className="flex items-center gap-1 px-1.5 py-0.5 rounded bg-white/5 border border-white/10 text-[10px] font-bold text-slate-500">
+                <Command size={10} />
+                <span>K</span>
+              </div>
+            </div>
+          </div>
 
           {/* NOTIFICATIONS */}
           <div className="relative">
-            <motion.button
-              whileHover={{ scale: 1.05 }}
-              whileTap={{ scale: 0.95 }}
-              onClick={() => setShowNotif(p => !p)}
+            <button
+              onClick={() => setShowNotif(!showNotif)}
               className={clsx(
-                "relative p-3 rounded-xl border transition-all duration-300",
+                "relative p-2.5 rounded-xl border transition-all duration-300 group",
                 showNotif 
-                  ? "bg-dark-700/80 border-brand-violet/30 text-white shadow-[0_0_20px_rgba(124,92,255,0.2)]" 
-                  : "bg-dark-800/40 border-glass-border text-slate-500 hover:text-white"
+                  ? "bg-slate-900 border-indigo-500/50 text-white shadow-lg" 
+                  : "bg-white/[0.03] border-white/10 text-slate-400 hover:text-white"
               )}
             >
-              <Bell className="w-5 h-5" />
+              <Bell className="w-5 h-5 group-hover:rotate-12 transition-transform" />
               {unreadCount > 0 && (
-                <span className="absolute top-2.5 right-3 w-2 h-2 bg-brand-violet rounded-full shadow-[0_0_10px_rgba(124,92,255,0.8)] border-2 border-dark-900" />
+                <span className="absolute top-2 right-2 w-2 h-2 bg-indigo-500 rounded-full ring-4 ring-slate-950" />
               )}
-            </motion.button>
+            </button>
 
             <AnimatePresence>
               {showNotif && (
                 <motion.div 
-                  initial={{ opacity: 0, scale: 0.95, y: 10 }}
-                  animate={{ opacity: 1, scale: 1, y: 0 }}
-                  exit={{ opacity: 0, scale: 0.95, y: 10 }}
-                  transition={{ type: "spring", stiffness: 400, damping: 25 }}
-                  className="absolute right-0 top-[120%] mt-2 w-80 bg-dark-900/90 backdrop-blur-xl border border-glass-border rounded-2xl shadow-glass overflow-hidden z-50 origin-top-right"
+                  initial={{ opacity: 0, y: 10, scale: 0.95 }}
+                  animate={{ opacity: 1, y: 0, scale: 1 }}
+                  exit={{ opacity: 0, y: 10, scale: 0.95 }}
+                  className="absolute right-0 top-full mt-3 w-80 glass-panel rounded-2xl overflow-hidden z-50 shadow-2xl origin-top-right"
                 >
-                  <div className="px-5 py-4 border-b border-glass-border flex justify-between items-center bg-white/[0.02]">
-                    <span className="text-sm font-display font-800 text-white">Notifications</span>
-                    {unreadCount > 0 && (
-                      <Badge variant="active" className="text-[10px] py-0">{unreadCount} new</Badge>
-                    )}
+                  <div className="px-5 py-4 border-b border-white/5 flex justify-between items-center bg-white/[0.02]">
+                    <span className="text-sm font-bold text-white">Notifications</span>
+                    <Badge variant="active">{unreadCount} New</Badge>
                   </div>
-                  <div className="max-h-[320px] overflow-y-auto no-scrollbar">
-                      {mockNotifications.map(n => (
-                      <div key={n.id} className="px-5 py-4 hover:bg-white/5 border-b border-glass-border last:border-0 cursor-pointer group transition-colors">
-                          <p className={clsx("text-sm transition-colors leading-snug", n.unread ? "text-white font-bold" : "text-slate-400 font-medium group-hover:text-slate-200")}>
-                              {n.text}
-                          </p>
-                          <p className="text-[10px] uppercase tracking-wider font-bold text-slate-600 mt-2">{n.time}</p>
+                  <div className="max-h-[350px] overflow-y-auto">
+                    {mockNotifications.map(n => (
+                      <div key={n.id} className="p-4 border-b border-white/5 hover:bg-white/[0.03] transition-colors cursor-pointer group">
+                        <p className={clsx("text-sm leading-snug transition-colors", n.unread ? "text-white font-semibold" : "text-slate-400")}>
+                          {n.text}
+                        </p>
+                        <p className="text-[10px] text-slate-600 font-bold uppercase tracking-wider mt-2 group-hover:text-slate-500 transition-colors">
+                          {n.time}
+                        </p>
                       </div>
-                      ))}
+                    ))}
                   </div>
-                  <div className="p-2 border-t border-glass-border bg-white/[0.02]">
-                    <button className="w-full py-2.5 rounded-xl text-xs font-bold text-slate-400 hover:text-white hover:bg-white/5 transition-all">
-                        Mark all as read
-                    </button>
+                  <div className="p-3 bg-white/[0.01]">
+                    <Button variant="ghost" size="sm" className="w-full text-xs">Clear All Notifications</Button>
                   </div>
                 </motion.div>
               )}
             </AnimatePresence>
           </div>
 
-          <div className="h-8 w-[1px] bg-glass-border mx-1" />
-          
+          <div className="w-[1px] h-6 bg-white/10 mx-1 hidden sm:block" />
+
+          {/* PROFILE */}
           <UserProfileDropdown />
           
         </div>
