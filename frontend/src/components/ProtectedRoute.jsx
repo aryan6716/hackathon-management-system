@@ -1,12 +1,12 @@
-import { Navigate } from "react-router-dom";
+import { Navigate, useLocation } from "react-router-dom";
 import { useAuth } from "../context/AuthContext";
 import { Loader } from "lucide-react";
 
 export default function ProtectedRoute({ children }) {
   const { user, loading } = useAuth();
-  const token = localStorage.getItem("token");
+  const location = useLocation();
 
-  // Prevent flashing logic while authenticating the JWT globally
+  // ✅ Show loader while auth state is being checked
   if (loading) {
     return (
       <div className="flex h-screen w-full items-center justify-center bg-dark-950 text-brand-violet">
@@ -15,10 +15,11 @@ export default function ProtectedRoute({ children }) {
     );
   }
 
-  // Eject rendering entirely if unauthorized
-  if (!token && !user) {
-    return <Navigate to="/login" replace />;
+  // ✅ Redirect to login if not authenticated
+  if (!user) {
+    return <Navigate to="/login" replace state={{ from: location }} />;
   }
 
+  // ✅ Allow access if authenticated
   return children;
 }

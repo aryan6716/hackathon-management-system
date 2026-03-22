@@ -1,112 +1,107 @@
-// import React, { useEffect } from 'react'
-// import { BrowserRouter, Routes, Route, Navigate } from 'react-router-dom'
-// import { AppProvider } from './context/AppContext'
-// import { AuthProvider } from './context/AuthContext'
-// import { ToastProvider } from './context/ToastContext'
-// import { apiGet } from './utils/api'
+import React from 'react'
+import { BrowserRouter, Routes, Route, Navigate } from 'react-router-dom'
 
-// import ProtectedRoute from "./components/ProtectedRoute"
-// import DashboardLayout from './components/layout/DashboardLayout'
-// import TopProgressBar from './components/ui/TopProgressBar'
+import { AppProvider } from './context/AppContext'
+import { AuthProvider } from './context/AuthContext'
+import { ToastProvider } from './context/ToastContext'
 
-// import LoginPage from './pages/LoginPage'
-// import RegisterPage from './pages/RegisterPage'
-// import DashboardPage from './pages/DashboardPage'
-// import HackathonsPage from './pages/HackathonsPage'
-// import TeamsPage from './pages/TeamsPage'
-// import LeaderboardPage from './pages/LeaderboardPage'
-// import SubmissionsPage from './pages/SubmissionsPage'
-// import ProfilePage from './pages/ProfilePage'
+import ProtectedRoute from "./components/ProtectedRoute"
+import DashboardLayout from './components/layout/DashboardLayout'
+import TopProgressBar from './components/ui/TopProgressBar'
 
-// import { useAuth } from './context/AuthContext'
-// import { AlertTriangle, RefreshCw } from 'lucide-react'
+import LoginPage from './pages/LoginPage'
+import RegisterPage from './pages/RegisterPage'
+import DashboardPage from './pages/DashboardPage'
+import HackathonsPage from './pages/HackathonsPage'
+import TeamsPage from './pages/TeamsPage'
+import LeaderboardPage from './pages/LeaderboardPage'
+import SubmissionsPage from './pages/SubmissionsPage'
+import ProfilePage from './pages/ProfilePage'
 
-// const GlobalNetworkBanner = () => {
-//   const [isDisconnected, setIsDisconnected] = React.useState(false)
+// Optional: network banner (safe)
+import { apiGet } from './utils/api'
+import { AlertTriangle, RefreshCw } from 'lucide-react'
 
-//   React.useEffect(() => {
-//     const handleDisconnect = () => setIsDisconnected(true)
-//     window.addEventListener('api_disconnected', handleDisconnect)
+const GlobalNetworkBanner = () => {
+  const [isDisconnected, setIsDisconnected] = React.useState(false)
 
-//     let interval;
-//     if (isDisconnected) {
-//       interval = setInterval(async () => {
-//         try {
-//           const res = await apiGet('/health')
-//           if (res?.status === 'OK') {
-//             setIsDisconnected(false)
-//             // Trigger a soft-reload to re-render fresh data without a hard refresh
-//             window.dispatchEvent(new Event('api_reconnected'))
-//           }
-//         } catch (err) {
-//           // Keep polling silently
-//         }
-//       }, 5000)
-//     }
+  React.useEffect(() => {
+    const handleDisconnect = () => setIsDisconnected(true)
+    window.addEventListener('api_disconnected', handleDisconnect)
 
-//     return () => {
-//       window.removeEventListener('api_disconnected', handleDisconnect)
-//       clearInterval(interval)
-//     }
-//   }, [isDisconnected])
+    let interval
+    if (isDisconnected) {
+      interval = setInterval(async () => {
+        try {
+          const res = await apiGet('/health')
+          if (res?.status === 'OK') {
+            setIsDisconnected(false)
+            window.dispatchEvent(new Event('api_reconnected'))
+          }
+        } catch {}
+      }, 5000)
+    }
 
-//   if (!isDisconnected) return null
+    return () => {
+      window.removeEventListener('api_disconnected', handleDisconnect)
+      clearInterval(interval)
+    }
+  }, [isDisconnected])
 
-//   return (
-//     <div className="fixed top-0 left-0 right-0 bg-red-600 text-white p-3 z-[9999] flex items-center justify-center gap-4 animate-in fade-in slide-in-from-top duration-300">
-//       <div className="flex items-center gap-2">
-//         <AlertTriangle size={20} />
-//         <span className="font-medium">System Disconnected - Auto Reconnecting...</span>
-//       </div>
-//       <RefreshCw size={18} className="animate-spin" />
-//     </div>
-//   )
-// }
+  if (!isDisconnected) return null
 
-// export default function App() {
-//   return (
-//     <BrowserRouter>
-//       <ToastProvider>
-//         <AuthProvider>
-//           <TopProgressBar />
-//           <GlobalNetworkBanner />
-//           <AppProvider>
-//             <Routes>
-//               {/* Public Route */}
-//               <Route path="/login" element={<LoginPage />} />
-//               <Route path="/register" element={<RegisterPage />} />
-
-//               {/* Protected Routes */}
-//               <Route 
-//                 path="/" 
-//                 element={
-//                   <ProtectedRoute>
-//                     <DashboardLayout />
-//                   </ProtectedRoute>
-//                 }
-//               >
-//                 <Route index element={<Navigate to="/dashboard" replace />} />
-//                 <Route path="dashboard" element={<DashboardPage />} />
-//                 <Route path="hackathons" element={<HackathonsPage />} />
-//                 <Route path="teams" element={<TeamsPage />} />
-//                 <Route path="submissions" element={<SubmissionsPage />} />
-//                 <Route path="leaderboard" element={<LeaderboardPage />} />
-//                 <Route path="profile" element={<ProfilePage />} />
-//               </Route>
-
-//               {/* Fallback */}
-//               <Route path="*" element={<Navigate to="/dashboard" replace />} />
-
-//             </Routes>
-//           </AppProvider>
-//         </AuthProvider>
-//       </ToastProvider>
-//     </BrowserRouter>
-//   )
-// }
-
-function App() {
-  return <h1 style={{color:"white"}}>WORKING ✅</h1>;
+  return (
+    <div className="fixed top-0 left-0 right-0 bg-red-600 text-white p-3 z-[9999] flex items-center justify-center gap-4">
+      <div className="flex items-center gap-2">
+        <AlertTriangle size={20} />
+        <span>System Disconnected - Reconnecting...</span>
+      </div>
+      <RefreshCw size={18} className="animate-spin" />
+    </div>
+  )
 }
 
-export default App;
+export default function App() {
+  return (
+    <BrowserRouter>
+      <ToastProvider>
+        <AuthProvider>
+          <TopProgressBar />
+          <GlobalNetworkBanner />
+
+          <AppProvider>
+            <Routes>
+
+              {/* ✅ Public Routes */}
+              <Route path="/login" element={<LoginPage />} />
+              <Route path="/register" element={<RegisterPage />} />
+
+              {/* ✅ Protected Routes */}
+              <Route
+                path="/"
+                element={
+                  <ProtectedRoute>
+                    <DashboardLayout />
+                  </ProtectedRoute>
+                }
+              >
+                <Route index element={<Navigate to="/dashboard" replace />} />
+                <Route path="dashboard" element={<DashboardPage />} />
+                <Route path="hackathons" element={<HackathonsPage />} />
+                <Route path="teams" element={<TeamsPage />} />
+                <Route path="submissions" element={<SubmissionsPage />} />
+                <Route path="leaderboard" element={<LeaderboardPage />} />
+                <Route path="profile" element={<ProfilePage />} />
+              </Route>
+
+              {/* ✅ FIXED fallback */}
+              <Route path="*" element={<Navigate to="/login" replace />} />
+
+            </Routes>
+          </AppProvider>
+
+        </AuthProvider>
+      </ToastProvider>
+    </BrowserRouter>
+  )
+}
