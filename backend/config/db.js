@@ -1,16 +1,25 @@
 const mysql = require("mysql2/promise");
 
-let pool;
+let pool = null;
 
 const connectDB = async () => {
   try {
     if (pool) return pool;
 
-    // 🔥 USE PUBLIC URL
-    pool = mysql.createPool(process.env.MYSQL_PUBLIC_URL);
+    pool = mysql.createPool({
+      host: process.env.MYSQLHOST,
+      user: process.env.MYSQLUSER,
+      password: process.env.MYSQLPASSWORD,
+      database: process.env.MYSQLDATABASE,
+      port: process.env.MYSQLPORT,
+
+      waitForConnections: true,
+      connectionLimit: 10,
+      queueLimit: 0,
+    });
 
     const conn = await pool.getConnection();
-    console.log("✅ MySQL Connected (Railway Public)");
+    console.log("✅ MySQL Connected (Railway Internal)");
     conn.release();
 
     return pool;
