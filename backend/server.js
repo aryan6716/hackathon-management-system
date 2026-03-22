@@ -5,7 +5,7 @@ const express = require('express');
 const cors = require('cors');
 require('dotenv').config();
 
-const { connectDB, getPool } = require('./config/db');
+const { connectDB, getPool, checkDBHealth } = require('./config/db');
 
 const authRoutes = require('./routes/authRoutes');
 const userRoutes = require('./routes/userRoutes');
@@ -22,12 +22,21 @@ const PORT = process.env.PORT || 8000;
 // Middleware
 // =====================
 
-// ✅ FIXED CORS (IMPORTANT for deployed frontend)
+// ✅ Dynamic CORS (production safe)
+const allowedOrigins = [
+  "http://localhost:5173",
+  "https://hackathonhub.vercel.app"
+];
+
 app.use(cors({
-  origin: [
-    "http://localhost:5173",
-    "https://hackathonhub.vercel.app" // apna frontend domain add karo
-  ],
+  origin: function (origin, callback) {
+    if (!origin || allowedOrigins.includes(origin) || origin.endsWith('.vercel.app') || origin.endsWith('.up.railway.app')) {
+      callback(null, true);
+    } else {
+      console.warn(`[CORS] Rejected Origin: ${origin}`);
+      callback(new Error("CORS blocked for this origin: " + origin));
+    }
+  },
   credentials: true
 }));
 
@@ -55,13 +64,14 @@ app.use('/api/stats', statsRoutes);
 // =====================
 // Health Check
 // =====================
-app.get('/api/health', (req, res) => {
+app.get('/api/health', async (req, res) => {
   let dbStatus = "disconnected";
+
   try {
-    getPool();
-    dbStatus = "connected";
+    const isHealthy = await checkDBHealth();
+    dbStatus = isHealthy ? "connected" : "unhealthy";
   } catch (err) {
-    // DB not initialized
+    dbStatus = "disconnected";
   }
 
   res.json({
@@ -86,13 +96,26 @@ app.use('*', (req, res) => {
 // Global Error Handler
 // =====================
 app.use((err, req, res, next) => {
-  console.error('Unhandled error:', err);
+  console.error("🔥 Unhandled Error:", err);
 
   res.status(err.status || 500).json({
     success: false,
     data: null,
-    message: err.message || 'Internal server error.'
+    message: err.message || "Internal server error"
   });
+});
+
+// =====================
+// Graceful Shutdown
+// =====================
+process.on('SIGINT', async () => {
+  console.log("\n🛑 Server shutting down...");
+  process.exit(0);
+});
+
+process.on('SIGTERM', async () => {
+  console.log("\n🛑 Server terminated...");
+  process.exit(0);
 });
 
 // =====================
@@ -100,17 +123,18 @@ app.use((err, req, res, next) => {
 // =====================
 const startServer = async () => {
   try {
-    // 🔥 CONNECT DB FIRST
+    console.log("⏳ Connecting to database...");
     await connectDB();
+    console.log("✅ Database ready");
   } catch (error) {
-    console.error("❌ Failed to connect to DB on startup:", error.message);
-    // Ensure we don't crash, let routes throw "DB not Initialized"
+    console.error("❌ DB connection failed on startup:", error.message);
+    console.log("⚠️ Server will start without DB (limited functionality)");
   }
 
   app.listen(PORT, () => {
     console.log(`\n🚀 HackathonHub API running on port ${PORT}`);
     console.log(`🌍 Live URL: https://hackathonhub.up.railway.app`);
-    console.log(`📋 Health: /api/health`);
+    console.log(`📋 Health Check: /api/health`);
   });
 };
 

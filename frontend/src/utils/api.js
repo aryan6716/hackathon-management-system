@@ -1,7 +1,9 @@
 import axios from 'axios'
 
-const BASE_URL = import.meta.env.VITE_API_URL || "http://localhost:8000";
-const API_BASE_URL = `${BASE_URL}/api`;
+const rawBaseUrl = import.meta.env.VITE_API_URL || "http://localhost:8000";
+// Fix: Ensure VITE_API_URL doesn't result in duplicating /api
+const BASE_URL = rawBaseUrl.endsWith('/') ? rawBaseUrl.slice(0, -1) : rawBaseUrl;
+const API_BASE_URL = BASE_URL.endsWith('/api') ? BASE_URL : `${BASE_URL}/api`;
 
 // Create pure scalable Axios instance
 const apiClient = axios.create({
@@ -48,7 +50,8 @@ apiClient.interceptors.response.use(
   async (error) => {
     window.dispatchEvent(new Event('api_request_end'))
 
-    const originalRequest = error.config
+    // Fix: Safely handle undefined error.config (e.g. CORS failure before request completes)
+    const originalRequest = error.config || {};
 
     if (error.response) {
       // Server rendered standard HTTP error
@@ -73,7 +76,8 @@ apiClient.interceptors.response.use(
         originalRequest._retryCount = 0
       }
 
-      if (originalRequest._retryCount < 3) {
+      // Safe retry logic if API request exists
+      if (originalRequest.url && originalRequest._retryCount < 3) {
         originalRequest._retryCount++
         
         // Wait 1s, 2s, 4s respectively
@@ -91,7 +95,16 @@ apiClient.interceptors.response.use(
   }
 )
 
-export const apiGet = (endpoint) => apiClient.get(endpoint)
-export const apiPost = (endpoint, body) => apiClient.post(endpoint, body)
-export const apiPut = (endpoint, body) => apiClient.put(endpoint, body)
-export const apiDelete = (endpoint) => apiClient.delete(endpoint)
+// Wrapper functions with generic Try-Catch
+export const apiGet = async (endpoint) => {
+  try { return await apiClient.get(endpoint) } catch(err) { throw err }
+}
+export const apiPost = async (endpoint, body) => {
+  try { return await apiClient.post(endpoint, body) } catch(err) { throw err }
+}
+export const apiPut = async (endpoint, body) => {
+  try { return await apiClient.put(endpoint, body) } catch(err) { throw err }
+}
+export const apiDelete = async (endpoint) => {
+  try { return await apiClient.delete(endpoint) } catch(err) { throw err }
+}

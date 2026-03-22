@@ -2,9 +2,14 @@ const mysql = require('mysql2/promise');
 
 let pool = null;
 
-// Create connection
+// ======================
+// Create DB Pool
+// ======================
 const connectDB = async () => {
-  if (pool) return pool;
+  if (pool) {
+    console.log("⚡ DB Pool already exists");
+    return pool;
+  }
 
   try {
     const dbConfig = {
@@ -13,39 +18,80 @@ const connectDB = async () => {
       user: process.env.MYSQLUSER || process.env.DB_USER,
       password: process.env.MYSQLPASSWORD || process.env.DB_PASSWORD,
       database: process.env.MYSQLDATABASE || process.env.DB_NAME,
+
       waitForConnections: true,
       connectionLimit: 10,
-      queueLimit: 0
+      queueLimit: 0,
     };
 
-    if (!dbConfig.host || !dbConfig.user || !dbConfig.database) {
-      throw new Error("Missing required database environment variables.");
+    // ======================
+    // Validate ENV
+    // ======================
+    const missingVars = [];
+    if (!dbConfig.host) missingVars.push("MYSQLHOST / DB_HOST");
+    if (!dbConfig.user) missingVars.push("MYSQLUSER / DB_USER");
+    if (!dbConfig.database) missingVars.push("MYSQLDATABASE / DB_NAME");
+
+    if (missingVars.length > 0) {
+      throw new Error(`Missing DB ENV variables: ${missingVars.join(", ")}`);
     }
 
+    // ======================
+    // Create Pool
+    // ======================
     pool = mysql.createPool(dbConfig);
 
-    // Test connection immediately
+    // ======================
+    // Test Connection
+    // ======================
     const connection = await pool.getConnection();
     console.log("✅ MySQL Connected Successfully");
     connection.release();
 
     return pool;
+
   } catch (err) {
-    console.error("❌ DB Connection Error:", err.message);
+    console.error("❌ DB Connection Failed:", err.message);
+
+    // Important: reset pool if failed
+    pool = null;
+
     throw err;
   }
 };
 
-// Safe getter function
+// ======================
+// Safe Pool Getter
+// ======================
 const getPool = () => {
   if (!pool) {
-    console.error("🚨 DB Pool accessed before initialization!");
-    throw new Error("Database pool has not been initialized. Please ensure connectDB is called.");
+    throw new Error(
+      "🚨 DB Pool not initialized. Call connectDB() before using database."
+    );
   }
   return pool;
 };
 
+// ======================
+// Health Check (Optional)
+// ======================
+const checkDBHealth = async () => {
+  try {
+    if (!pool) return false;
+
+    const connection = await pool.getConnection();
+    await connection.ping();
+    connection.release();
+
+    return true;
+  } catch (err) {
+    console.error("❌ DB Health Check Failed:", err.message);
+    return false;
+  }
+};
+
 module.exports = {
   connectDB,
-  getPool
+  getPool,
+  checkDBHealth,
 };
