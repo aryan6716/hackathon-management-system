@@ -79,9 +79,9 @@ export function StatCard({ label, value, icon: Icon, delta, color = 'indigo', cl
           {delta !== undefined && (
             <div className={clsx(
               'flex items-center gap-1 text-xs font-bold px-2 py-1 rounded-lg',
-              delta >= 0 ? 'text-emerald-400 bg-emerald-500/10' : 'text-red-400 bg-red-500/10'
+              (typeof delta === 'number' ? delta : parseFloat(delta)) >= 0 ? 'text-emerald-400 bg-emerald-500/10' : 'text-red-400 bg-red-500/10'
             )}>
-              {delta >= 0 ? '↑' : '↓'} {Math.abs(delta)}%
+              {(typeof delta === 'number' ? delta : parseFloat(delta)) >= 0 ? '↑' : '↓'} {Math.abs(parseFloat(delta) || 0).toFixed(1)}%
             </div>
           )}
         </div>
@@ -176,7 +176,9 @@ export function Select({ label, options = [], className, ...props }) {
 
 // ── Progress Bar ──────────────────────────────────────────────────
 export function ProgressBar({ value, max = 100, color = 'indigo', className }) {
-  const pct = Math.min(100, (value / max) * 100)
+  const safeValue = Number(value) || 0;
+  const safeMax = Number(max) || 0;
+  const pct = safeMax > 0 ? Math.min(100, (safeValue / safeMax) * 100) : 0;
   const colors = {
     indigo: 'from-indigo-500 to-purple-500',
     purple: 'from-purple-500 to-pink-500',

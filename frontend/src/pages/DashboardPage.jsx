@@ -125,7 +125,7 @@ export default function Dashboard() {
             label="Active Hackers" 
             value={stats.users.toLocaleString()} 
             icon={Users} 
-            delta="+12.5%" 
+            delta={12.5} 
             isPositive={true}
           />
           <StatCard 
@@ -139,7 +139,7 @@ export default function Dashboard() {
             label="Total Squads" 
             value={stats.teams.toLocaleString()} 
             icon={Target} 
-            delta="-3% Monthly" 
+            delta={-3} 
             isPositive={false}
           />
           <StatCard 
