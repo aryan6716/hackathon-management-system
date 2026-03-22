@@ -1,13 +1,11 @@
 import React, { useState } from 'react'
 import { Link, useNavigate, useLocation } from 'react-router-dom'
 import { motion, AnimatePresence } from 'framer-motion'
-import { Eye, EyeOff, Zap, AlertCircle } from 'lucide-react'
+import { Eye, EyeOff, AlertCircle } from 'lucide-react'
 import { useAuth } from '../context/AuthContext'
 import { useToast } from '../context/ToastContext'
 import { apiPost } from '../utils/api'
 import { Input, Button } from '../components/ui'
-
-// icons same as your code...
 
 export default function LoginPage() {
   const navigate = useNavigate()
@@ -16,7 +14,7 @@ export default function LoginPage() {
   const { login } = useAuth()
   const { showToast } = useToast()
 
-  // ✅ FIX 1: SMART REDIRECT
+  // ✅ Redirect after login
   const from = location.state?.from?.pathname || "/dashboard"
 
   const [form, setForm] = useState({ email: '', password: '' })
@@ -29,7 +27,7 @@ export default function LoginPage() {
 
   const triggerShake = () => {
     setShake(true)
-    setTimeout(() => setShake(false), 500)
+    setTimeout(() => setShake(false), 400)
   }
 
   const handleLogin = async (e) => {
@@ -45,13 +43,22 @@ export default function LoginPage() {
     try {
       setLoading(true)
 
-      const data = await apiPost('/auth/login', form)
+      const res = await apiPost('/auth/login', form)
 
-      login(data.token, data.user)
+      // ✅ CRITICAL FIX (backend structure)
+      const token = res?.data?.token
+      const user = res?.data?.user
+
+      if (!token || !user) {
+        throw new Error("Invalid server response")
+      }
+
+      // ✅ Save auth
+      login(token, user)
 
       showToast('Login successful 🎉', 'success')
 
-      // ✅ FIX 2: REDIRECT PROPERLY
+      // ✅ Redirect
       navigate(from, { replace: true })
 
     } catch (err) {
@@ -65,15 +72,26 @@ export default function LoginPage() {
   }
 
   return (
-    <div className="min-h-screen flex items-center justify-center bg-dark-950 font-sans text-white">
+    <div className="min-h-screen flex items-center justify-center bg-dark-950 text-white">
 
-      <motion.div className="w-full max-w-md p-8 bg-dark-900 rounded-xl shadow-lg">
+      <motion.div
+        className={`w-full max-w-md p-8 bg-dark-900 rounded-xl shadow-lg ${shake ? 'animate-shake' : ''}`}
+        initial={{ opacity: 0, y: 30 }}
+        animate={{ opacity: 1, y: 0 }}
+      >
 
-        <h2 className="text-2xl font-bold text-center mb-6">Welcome back</h2>
+        <h2 className="text-2xl font-bold text-center mb-6">
+          Welcome back
+        </h2>
 
+        {/* Error */}
         <AnimatePresence>
           {error && (
-            <motion.div className="mb-4 text-red-400 text-sm flex items-center gap-2">
+            <motion.div
+              className="mb-4 text-red-400 text-sm flex items-center gap-2"
+              initial={{ opacity: 0 }}
+              animate={{ opacity: 1 }}
+            >
               <AlertCircle size={16} />
               {error}
             </motion.div>
@@ -82,6 +100,7 @@ export default function LoginPage() {
 
         <form onSubmit={handleLogin} className="space-y-4">
 
+          {/* Email */}
           <Input
             type="email"
             placeholder="Email"
@@ -90,32 +109,38 @@ export default function LoginPage() {
             required
           />
 
+          {/* Password */}
           <div className="relative">
             <input
               type={showPwd ? 'text' : 'password'}
               placeholder="Password"
               value={form.password}
               onChange={e => update('password', e.target.value)}
-              className="w-full p-3 rounded bg-dark-800 border border-gray-700"
+              className="w-full p-3 rounded bg-dark-800 border border-gray-700 focus:outline-none"
               required
             />
+
             <button
               type="button"
               onClick={() => setShowPwd(!showPwd)}
-              className="absolute right-3 top-3"
+              className="absolute right-3 top-3 text-gray-400"
             >
               {showPwd ? <EyeOff size={18} /> : <Eye size={18} />}
             </button>
           </div>
 
+          {/* Button */}
           <Button type="submit" loading={loading} className="w-full">
             {loading ? "Logging in..." : "Login"}
           </Button>
 
         </form>
 
-        <p className="text-center text-sm mt-4">
-          Don't have an account? <Link to="/register">Register</Link>
+        <p className="text-center text-sm mt-4 text-gray-400">
+          Don't have an account?{" "}
+          <Link to="/register" className="text-blue-400">
+            Register
+          </Link>
         </p>
 
       </motion.div>
