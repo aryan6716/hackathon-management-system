@@ -7,31 +7,49 @@ export const AuthProvider = ({ children }) => {
   const [user, setUser] = useState(null)
   const [loading, setLoading] = useState(true)
 
-  // 🔥 LOAD USER ON APP START
   useEffect(() => {
     let isMounted = true
 
     const initAuth = async () => {
       try {
         setLoading(true)
-        const token = localStorage.getItem("token")
 
+        const token = localStorage.getItem("token")
+        const storedUser = localStorage.getItem("user")
+
+        // ✅ FIX 1: Load from localStorage first (instant UI)
+        if (storedUser) {
+          setUser(JSON.parse(storedUser))
+        }
+
+        // ❌ No token → stop loading
         if (!token) {
-          if (isMounted) setLoading(false)
+          if (isMounted) {
+            setUser(null)
+            setLoading(false)
+          }
           return
         }
 
+        // ✅ Validate user with backend
         const data = await apiGet('/auth/me')
 
         if (isMounted) {
-          setUser(data.user || data)
+          const userData = data.user || data
+          setUser(userData)
+          localStorage.setItem("user", JSON.stringify(userData))
         }
 
       } catch (err) {
+        console.log("Auth error:", err)
         localStorage.removeItem("token")
-        if (isMounted) setUser(null)
+        localStorage.removeItem("user")
+
+        if (isMounted) {
+          setUser(null)
+        }
       } finally {
-        if (isMounted) setLoading(false)
+        if (isMounted) setLoading(false) // 🔥 ALWAYS RUN
       }
     }
 
@@ -40,21 +58,18 @@ export const AuthProvider = ({ children }) => {
     return () => { isMounted = false }
   }, [])
 
-  // 🔥 LOGIN FUNCTION
   const login = (token, userData) => {
     localStorage.setItem("token", token)
     localStorage.setItem("user", JSON.stringify(userData))
     setUser(userData)
   }
 
-  // 🔥 LOGOUT FUNCTION
   const logout = () => {
     localStorage.removeItem("token")
     localStorage.removeItem("user")
     setUser(null)
   }
 
-  // 🔥 UPDATE USER LOCALLY
   const updateUser = (newUserData) => {
     const updated = { ...user, ...newUserData }
     setUser(updated)
@@ -62,8 +77,6 @@ export const AuthProvider = ({ children }) => {
     return updated
   }
 
-
-  // 🔥 GOOGLE LOGIN
   const googleLogin = async (googleData) => {
     try {
       const data = await apiPost('/auth/google', googleData)
@@ -83,5 +96,4 @@ export const AuthProvider = ({ children }) => {
   )
 }
 
-// 🔥 CUSTOM HOOK
 export const useAuth = () => useContext(AuthContext)
