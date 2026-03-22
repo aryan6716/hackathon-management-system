@@ -40,23 +40,9 @@
 // }
 
 export default function DashboardLayout() {
-  const { sidebarCollapsed } = useApp()
-
   return (
-    <div className="min-h-screen bg-dark-950">
-
-      <main
-        className={clsx(
-          'transition-all duration-300 pt-16 min-h-screen',
-          sidebarCollapsed ? 'lg:pl-16' : 'lg:pl-60'
-        )}
-      >
-        <div className="p-4 lg:p-6 max-w-7xl mx-auto">
-          <h1 style={{color:"white"}}>LAYOUT WORKING ✅</h1>
-          <Outlet />
-        </div>
-      </main>
-
+    <div style={{ color: "white", padding: "20px" }}>
+      <h1>APP WORKING ✅</h1>
     </div>
   )
 }
