@@ -59,10 +59,11 @@ class Submission {
           s.title,
           s.description,
           s.github_link,
+          s.submitted_at,
           s.team_id,
           s.event_id,
-          t.team_name,
-          e.name AS event_name,
+          t.name AS team_name,
+          e.title AS event_name,
           COALESCE(AVG(sc.score), 0) AS avg_score,
           COUNT(sc.id) AS score_count
 
@@ -72,7 +73,7 @@ class Submission {
         LEFT JOIN scores sc ON sc.submission_id = s.id
 
         WHERE s.id = ?
-        GROUP BY s.id, t.team_name, e.name
+        GROUP BY s.id, s.submitted_at, t.name, e.title
       `, [id]);
 
       return rows[0] || null;
@@ -148,9 +149,10 @@ class Submission {
           SELECT 
             s.id,
             s.title,
+            s.submitted_at,
             s.team_id,
-            t.team_name,
-            e.name AS event_name,
+            t.name AS team_name,
+            e.title AS event_name,
             COALESCE(AVG(sc.score), 0) AS avg_score,
             COUNT(DISTINCT sc.id) AS score_count
 
@@ -159,7 +161,7 @@ class Submission {
           LEFT JOIN events e ON s.event_id = e.id
           LEFT JOIN scores sc ON sc.submission_id = s.id
 
-          GROUP BY s.id, t.team_name, e.name
+          GROUP BY s.id, s.submitted_at, t.name, e.title
           ORDER BY s.id DESC
           LIMIT ? OFFSET ?
         `;
@@ -175,8 +177,9 @@ class Submission {
           SELECT 
             s.id,
             s.title,
-            t.team_name,
-            e.name AS event_name,
+            s.submitted_at,
+            t.name AS team_name,
+            e.title AS event_name,
             COALESCE(AVG(sc.score), 0) AS avg_score,
             COUNT(DISTINCT sc.id) AS score_count,
 
@@ -195,7 +198,7 @@ class Submission {
             SELECT event_id FROM judge_assignments WHERE judge_id = ?
           )
 
-          GROUP BY s.id, t.team_name, e.name
+          GROUP BY s.id, s.submitted_at, t.name, e.title
           ORDER BY s.id DESC
           LIMIT ? OFFSET ?
         `;
@@ -214,8 +217,9 @@ class Submission {
           SELECT 
             s.id,
             s.title,
-            t.team_name,
-            e.name AS event_name,
+            s.submitted_at,
+            t.name AS team_name,
+            e.title AS event_name,
             COALESCE(AVG(sc.score), 0) AS avg_score,
             COUNT(DISTINCT sc.id) AS score_count
 
@@ -228,7 +232,7 @@ class Submission {
             SELECT team_id FROM team_members WHERE user_id = ?
           )
 
-          GROUP BY s.id, t.team_name, e.name
+          GROUP BY s.id, s.submitted_at, t.name, e.title
           ORDER BY s.id DESC
           LIMIT ? OFFSET ?
         `;
@@ -240,7 +244,6 @@ class Submission {
         ];
       }
 
-      console.log("FINAL PARAMS:", { user_id, limit: Number(limit), offset: Number(offset) });
       const [rows] = await pool.execute(query, params);
       return rows;
 

@@ -4,12 +4,12 @@ import { useNavigate } from "react-router-dom";
 import { motion } from "framer-motion";
 import { useAuth } from "../context/AuthContext";
 import { 
-  Users, Zap, Activity, TrendingUp, Trophy, ArrowRight, 
-  Clock, Calendar, Star, Sparkles, Target, Rocket
+  Users, Zap, Activity, Trophy, ArrowRight, 
+  Clock, Sparkles, Target, Rocket
 } from "lucide-react";
 import { Card, Button, StatCard, Badge, SectionHeader } from "../components/ui";
 import { apiGet } from "../utils/api";
-import { StaggerContainer, StaggerItem, FadeIn, SlideUp } from "../components/ui/Animations";
+import { StaggerContainer, StaggerItem } from "../components/ui/Animations";
 import clsx from 'clsx';
 
 export default function Dashboard() {
@@ -31,7 +31,6 @@ export default function Dashboard() {
     try {
       return await apiGet(url);
     } catch (err) {
-      console.error("API Error:", url, err.message);
       return null;
     }
   };
@@ -46,13 +45,13 @@ export default function Dashboard() {
         ]);
         
         setStats({
-          users: statsData?.totalUsers || 0,
-          events: statsData?.activeEvents || 0,
-          teams: statsData?.totalTeams || 0,
-          projects: statsData?.totalProjects || 0,
+          users: statsData?.stats?.totalUsers || statsData?.totalUsers || 0,
+          events: statsData?.stats?.activeEvents || statsData?.activeEvents || 0,
+          teams: statsData?.stats?.totalTeams || statsData?.totalTeams || 0,
+          projects: statsData?.stats?.totalProjects || statsData?.totalProjects || 0,
         });
 
-        const safeLeaderboard = Array.isArray(leaderboardData) ? leaderboardData : [];
+        const safeLeaderboard = Array.isArray(leaderboardData) ? leaderboardData : (Array.isArray(leaderboardData?.leaderboard) ? leaderboardData.leaderboard : []);
         setLeaderboard(
           safeLeaderboard.slice(0, 5).map((l, i) => ({
             rank: i + 1,
@@ -79,13 +78,22 @@ export default function Dashboard() {
             <Zap className="w-6 h-6 text-indigo-400 animate-pulse" />
           </div>
         </div>
-        <p className="text-slate-400 font-bold uppercase tracking-[0.2em] text-xs">Initializing Intel...</p>
+        <p className="text-gray-400 font-bold uppercase tracking-[0.2em] text-xs">Loading dashboard...</p>
       </div>
     );
   }
 
   return (
-    <StaggerContainer className="space-y-10 pb-20">
+    <StaggerContainer className="px-6 lg:px-10 py-6 space-y-10 pb-20">
+      {error && (
+        <div className="bg-red-500/10 border border-red-500/20 text-red-400 p-4 rounded-xl">
+          <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
+            <p className="text-sm font-medium">Could not load some dashboard data. {error}</p>
+            <Button variant="secondary" onClick={() => window.location.reload()} className="w-full sm:w-auto hover:bg-red-500/20 border-red-500/30">Retry</Button>
+          </div>
+        </div>
+      )}
+
       {/* HEADER SECTION */}
       <StaggerItem>
         <div className="flex flex-col md:flex-row md:items-end justify-between gap-6">
@@ -96,23 +104,19 @@ export default function Dashboard() {
               <span className="text-[10px] font-bold text-slate-500 uppercase tracking-widest">v2.4.0-premium</span>
             </div>
             <h1 className="text-4xl md:text-5xl font-bold text-white tracking-tight flex flex-wrap items-center gap-x-4">
-              <span>Command</span>
-              <span className="text-gradient">Center</span>
+              <span>Team</span>
+              <span className="bg-gradient-to-r from-purple-400 to-indigo-400 bg-clip-text text-transparent">Dashboard</span>
               <Sparkles className="text-indigo-400 w-8 h-8 hidden sm:block" />
             </h1>
-            <p className="text-slate-400 text-base mt-3 max-w-2xl font-medium leading-relaxed">
-              Welcome back, Commander <span className="text-slate-200 font-bold underline decoration-indigo-500/30 underline-offset-4">{user?.name?.split(' ')[0]}</span>. 
-              Your base operations are running at peak efficiency.
+            <p className="text-gray-400 text-base mt-3 max-w-2xl font-medium leading-relaxed">
+              Welcome back, <span className="text-slate-200 font-bold underline decoration-indigo-500/30 underline-offset-4">{user?.name?.split(' ')[0]}</span>.
+              Here is a quick overview of your current hackathon activity.
             </p>
           </div>
           <div className="flex items-center gap-3">
-            <Button variant="secondary" size="lg" className="!rounded-2xl border-white/5 bg-white/[0.03]">
-              <Calendar size={18} className="mr-2 opacity-50" />
-              <span>Schedule</span>
-            </Button>
-            <Button size="lg" className="!rounded-2xl shadow-indigo-600/20" onClick={() => navigate('/hackathons')}>
+            <Button size="lg" className="btn-premium-primary shadow-lg shadow-purple-500/30 !rounded-2xl" onClick={() => navigate('/hackathons')}>
               <Rocket size={18} className="mr-2" />
-              <span>Launch Mission</span>
+              <span>Explore Hackathons</span>
             </Button>
           </div>
         </div>
@@ -156,15 +160,18 @@ export default function Dashboard() {
         {/* LEADERBOARD SECTION */}
         <StaggerItem className="lg:col-span-2 space-y-6">
           <SectionHeader 
-            title="Elite Squad Standings" 
-            subtitle="Current top performing teams across all active missions"
+            title="Top Team Standings" 
+            subtitle="Leading teams from recent scoring activity"
             className="mb-0"
           />
-          <Card className="overflow-hidden p-2 !rounded-[24px]">
+          <Card className="overflow-hidden p-2 !rounded-[24px] glass-card border border-white/10 backdrop-blur-xl">
             {leaderboard.length === 0 ? (
               <div className="py-20 flex flex-col items-center justify-center text-slate-500">
                 <Trophy size={48} className="opacity-10 opacity-20 mb-4" />
                 <p className="font-bold uppercase tracking-widest text-xs">No active standings found</p>
+                <Button variant="secondary" size="sm" className="mt-6" onClick={() => navigate('/submissions')}>
+                  Submit a Project
+                </Button>
               </div>
             ) : (
               <div className="space-y-1">
@@ -191,14 +198,14 @@ export default function Dashboard() {
                         </h3>
                         <div className="flex items-center gap-2 mt-1">
                           <Activity size={12} className="text-emerald-500" />
-                          <span className="text-[11px] font-bold text-slate-500 uppercase tracking-wider">Combat Ready</span>
+                          <span className="text-[11px] font-bold text-slate-500 uppercase tracking-wider">Active Team</span>
                         </div>
                       </div>
                     </div>
                     <div className="flex items-center gap-6">
                       <div className="text-right hidden sm:block">
                         <p className="text-xl font-bold text-white">{Number(team.score).toFixed(1)}</p>
-                        <p className="text-[10px] font-bold text-slate-600 uppercase tracking-widest">XP Points</p>
+                        <p className="text-[10px] font-bold text-gray-400 uppercase tracking-widest">Average Score</p>
                       </div>
                       <div className="w-8 h-8 rounded-lg bg-white/5 flex items-center justify-center group-hover:bg-indigo-500 group-hover:text-white transition-all">
                         <ArrowRight size={14} />
@@ -209,8 +216,8 @@ export default function Dashboard() {
               </div>
             )}
             <div className="p-3 bg-white/[0.01] border-t border-white/5">
-              <Button variant="ghost" className="w-full !rounded-xl text-indigo-400 hover:text-indigo-300 hover:bg-indigo-500/5">
-                View Global Hall of Fame
+              <Button variant="ghost" className="w-full !rounded-xl text-indigo-400 hover:text-indigo-300 hover:bg-indigo-500/5" onClick={() => navigate('/leaderboard')}>
+                View Full Leaderboard
               </Button>
             </div>
           </Card>
@@ -220,10 +227,10 @@ export default function Dashboard() {
         <StaggerItem className="space-y-8">
           <div className="space-y-4">
             <h3 className="text-sm font-bold text-slate-500 uppercase tracking-[0.2em] flex items-center gap-2 px-2">
-              <Zap className="w-4 h-4 text-indigo-400" /> Rapid Access
+              <Zap className="w-4 h-4 text-indigo-400" /> Quick Actions
             </h3>
             <div className="space-y-3">
-              <button onClick={() => navigate('/hackathons')} className="w-full flex items-center justify-between p-4 glass-card rounded-2xl border border-white/5 hover:border-indigo-500/30 hover:bg-white/[0.05] transition-all group overflow-hidden relative">
+              <button onClick={() => navigate('/hackathons')} className="w-full flex items-center justify-between p-4 glass-card rounded-2xl border border-white/10 backdrop-blur-xl hover:border-indigo-500/30 hover:bg-white/[0.05] transition-all group overflow-hidden relative">
                 <div className="absolute inset-0 bg-gradient-to-r from-indigo-500/0 via-indigo-500/[0.05] to-indigo-500/0 -translate-x-full group-hover:translate-x-full transition-transform duration-1000" />
                 <div className="flex items-center gap-4 relative z-10">
                   <div className="w-10 h-10 rounded-xl bg-indigo-500/10 flex items-center justify-center text-indigo-400 group-hover:scale-110 transition-transform">
@@ -231,20 +238,20 @@ export default function Dashboard() {
                   </div>
                   <div className="text-left">
                     <p className="text-sm font-bold text-white">Join Mission</p>
-                    <p className="text-[10px] text-slate-500 font-medium">Explore active events</p>
+                    <p className="text-[10px] text-slate-500 font-medium">Browse active and upcoming events</p>
                   </div>
                 </div>
                 <ArrowRight size={18} className="text-slate-600 group-hover:text-white group-hover:translate-x-1 transition-all" />
               </button>
 
-              <button onClick={() => navigate('/teams')} className="w-full flex items-center justify-between p-4 glass-card rounded-2xl border border-white/5 hover:border-emerald-500/30 hover:bg-white/[0.05] transition-all group overflow-hidden relative">
+              <button onClick={() => navigate('/teams')} className="w-full flex items-center justify-between p-4 glass-card rounded-2xl border border-white/10 backdrop-blur-xl hover:border-emerald-500/30 hover:bg-white/[0.05] transition-all group overflow-hidden relative">
                 <div className="flex items-center gap-4 relative z-10">
                   <div className="w-10 h-10 rounded-xl bg-emerald-500/10 flex items-center justify-center text-emerald-400 group-hover:scale-110 transition-transform">
                     <Users size={20} />
                   </div>
                   <div className="text-left">
                     <p className="text-sm font-bold text-white">Manage Squad</p>
-                    <p className="text-[10px] text-slate-500 font-medium">Coordinate your team</p>
+                    <p className="text-[10px] text-slate-500 font-medium">Invite members and manage your team</p>
                   </div>
                 </div>
                 <ArrowRight size={18} className="text-slate-600 group-hover:text-white group-hover:translate-x-1 transition-all" />
@@ -254,14 +261,14 @@ export default function Dashboard() {
 
           <div className="space-y-4">
             <h3 className="text-sm font-bold text-slate-500 uppercase tracking-[0.2em] flex items-center gap-2 px-2">
-              <Clock className="w-4 h-4" /> Mission Logs
+              <Clock className="w-4 h-4" /> Recent Activity
             </h3>
-            <Card className="!rounded-[24px] p-6 relative">
+            <Card className="!rounded-[24px] p-6 relative glass-card border border-white/10 backdrop-blur-xl">
               <div className="space-y-8 relative before:absolute before:inset-0 before:left-[11px] before:w-[2px] before:bg-white/5">
                 {[
-                  { title: "Base Synced", desc: "All local caches optimized.", time: "2m ago", icon: Zap, color: "text-indigo-400", dot: "bg-indigo-400" },
-                  { title: "Team Invitation", desc: "NeuroSync requested you.", time: "1h ago", icon: Users, color: "text-emerald-400", dot: "bg-emerald-400" },
-                  { title: "Security Guard", desc: "New login verified.", time: "4h ago", icon: Target, color: "text-rose-400", dot: "bg-rose-400" },
+                  { title: "Dashboard updated", desc: "Latest stats and rankings are ready.", time: "Now", icon: Zap, color: "text-indigo-400", dot: "bg-indigo-400" },
+                  { title: "Team reminder", desc: "Make sure everyone has joined your team.", time: "Today", icon: Users, color: "text-emerald-400", dot: "bg-emerald-400" },
+                  { title: "Submission tip", desc: "Add your project early to get feedback faster.", time: "Today", icon: Target, color: "text-rose-400", dot: "bg-rose-400" },
                 ].map((item, i) => (
                   <div key={i} className="relative pl-8 group">
                     <div className={`absolute left-[-26px] top-1 w-[24px] h-[24px] rounded-full border-4 border-slate-900 ${item.dot} shadow-lg z-10 transition-transform group-hover:scale-125`} />

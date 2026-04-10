@@ -4,16 +4,17 @@ const asyncHandler = require('../middleware/asyncHandler');
 
 // CREATE EVENT
 const createEvent = asyncHandler(async (req, res) => {
-  const { name, description, start_date, end_date } = req.body;
+  const { name, title, description, start_date, end_date } = req.body;
+  const eventName = name || title;
 
-  if (!name || !start_date || !end_date)
+  if (!eventName || !start_date || !end_date)
     return res.status(400).json({ success: false, message: 'Event name, start date, and end date are required.' });
 
   if (new Date(start_date) >= new Date(end_date))
     return res.status(400).json({ success: false, message: 'Start date must be before end date.' });
 
   const event = await Event.create({
-    name,
+    name: eventName,
     description,
     start_date,
     end_date,

@@ -1,5 +1,5 @@
 import React, { createContext, useContext, useEffect, useState } from "react"
-import { apiGet, apiPost } from "../utils/api"
+import { apiGet } from "../utils/api"
 
 const AuthContext = createContext()
 
@@ -41,7 +41,6 @@ export const AuthProvider = ({ children }) => {
         }
 
       } catch (err) {
-        console.log("Auth error:", err)
         localStorage.removeItem("token")
         localStorage.removeItem("user")
 
@@ -77,20 +76,8 @@ export const AuthProvider = ({ children }) => {
     return updated
   }
 
-  const googleLogin = async (googleData) => {
-    try {
-      const data = await apiPost('/auth/google', googleData)
-      if (data.success) {
-        login(data.token, data.user)
-        return { success: true }
-      }
-    } catch (err) {
-      return { success: false, message: err.message }
-    }
-  }
-
   return (
-    <AuthContext.Provider value={{ user, loading, login, logout, googleLogin, updateUser }}>
+    <AuthContext.Provider value={{ user, loading, login, logout, updateUser }}>
       {children}
     </AuthContext.Provider>
   )

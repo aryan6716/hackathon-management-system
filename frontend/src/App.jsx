@@ -88,6 +88,7 @@ export default function App() {
                 <Route index element={<Navigate to="/dashboard" replace />} />
                 <Route path="dashboard" element={<DashboardPage />} />
                 <Route path="hackathons" element={<HackathonsPage />} />
+                <Route path="hackathons/:id" element={<HackathonsPage />} />
                 <Route path="teams" element={<TeamsPage />} />
                 <Route path="submissions" element={<SubmissionsPage />} />
                 <Route path="leaderboard" element={<LeaderboardPage />} />

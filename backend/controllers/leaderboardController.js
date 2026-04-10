@@ -11,6 +11,13 @@ const submitScore = asyncHandler(async (req, res) => {
   const { submission_id, score, feedback } = req.body;
   const judge_id = req.user?.id;
 
+  if (!submission_id) {
+    return res.status(400).json({
+      success: false,
+      message: 'submission_id is required'
+    });
+  }
+
   const numScore = parseFloat(score);
 
   if (isNaN(numScore) || numScore < 0 || numScore > 10) {
@@ -37,37 +44,12 @@ const submitScore = asyncHandler(async (req, res) => {
 // GET LEADERBOARD
 // ======================
 const getLeaderboard = asyncHandler(async (req, res) => {
-  let dbConnected = true;
-
   try {
-    getPool(); // ✅ clean check
+    getPool();
   } catch (e) {
-    dbConnected = false;
-  }
-
-  // ======================
-  // FALLBACK DATA
-  // ======================
-  if (!dbConnected) {
-    return res.json({
-      success: true,
-      leaderboard: [
-        {
-          id: 1,
-          title: 'AI Health',
-          team_name: 'NeuralNomads',
-          avg_score: 9.6,
-          judge_count: 3
-        },
-        {
-          id: 2,
-          title: 'Defi Protocol',
-          team_name: 'CryptoGurus',
-          avg_score: 8.4,
-          judge_count: 2
-        }
-      ],
-      message: 'Mock leaderboard'
+    return res.status(503).json({
+      success: false,
+      message: 'Database unavailable'
     });
   }
 

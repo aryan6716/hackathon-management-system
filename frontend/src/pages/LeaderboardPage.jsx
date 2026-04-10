@@ -1,8 +1,9 @@
 import React, { useState, useEffect } from 'react'
 import { motion } from 'framer-motion'
-import { Trophy, RefreshCw, Zap, TrendingUp } from 'lucide-react'
-import { Card, Badge, Avatar, Skeleton, SectionHeader, EmptyState } from '../components/ui'
+import { Trophy, Zap, TrendingUp } from 'lucide-react'
+import { Card, Badge, Avatar, Skeleton, SectionHeader, EmptyState, Button } from '../components/ui'
 import { apiGet } from '../utils/api'
+import { useNavigate } from 'react-router-dom'
 import clsx from 'clsx'
 
 const podiumConfig = {
@@ -23,8 +24,8 @@ function PodiumCard({ entry, position }) {
       className={clsx('flex-1 flex flex-col items-center relative', order)}
     >
       <motion.div 
-        animate={{ y: [0, -6, 0] }} 
-        transition={{ repeat: Infinity, duration: position === 1 ? 3 : 4, ease: "easeInOut", delay: position * 0.5 }}
+        animate={{ y: [0, -3, 0] }} 
+        transition={{ duration: 0.8, ease: "easeOut", delay: position * 0.1 }}
         className="text-4xl sm:text-5xl mb-3 drop-shadow-[0_0_15px_rgba(255,255,255,0.4)]"
       >
         {cfg.icon}
@@ -46,7 +47,7 @@ function PodiumCard({ entry, position }) {
               <TrendingUp className="w-4 h-4" />
               {Number(entry.score || 0).toFixed(1)}
           </div>
-          <p className="text-[10px] text-slate-500 mt-2 font-bold uppercase tracking-widest">{entry.members} REVIEWS</p>
+          <p className="text-[10px] text-gray-400 mt-2 font-bold uppercase tracking-widest">{entry.members} REVIEWS</p>
         </div>
       </motion.div>
     </motion.div>
@@ -54,7 +55,7 @@ function PodiumCard({ entry, position }) {
 }
 
 const LeaderboardSkeleton = () => (
-  <div className="space-y-8 pb-12">
+  <div className="px-6 lg:px-10 py-6 space-y-8 pb-12">
     <div className="flex justify-between items-end">
         <div className="space-y-3">
             <Skeleton className="h-10 w-64" />
@@ -93,18 +94,21 @@ const tableRow = {
 }
 
 export default function LeaderboardPage() {
+  const navigate = useNavigate()
   const [leaderboard, setLeaderboard] = useState([])
   const [loading, setLoading] = useState(true)
+  const [error, setError] = useState('')
 
   useEffect(() => {
     const fetchLeaderboard = async () => {
       try {
+        setError('')
         const data = await apiGet('/leaderboard')
-        setLeaderboard(Array.isArray(data) ? data : [])
+        setLeaderboard(Array.isArray(data) ? data : (Array.isArray(data?.leaderboard) ? data.leaderboard : []))
       } catch (err) {
-        console.error(err)
+        setError(err.message || 'Could not load leaderboard.')
       } finally {
-        setTimeout(() => setLoading(false), 500)
+        setLoading(false)
       }
     }
     fetchLeaderboard()
@@ -121,31 +125,36 @@ export default function LeaderboardPage() {
   return (
     <motion.div 
       initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }}
-      className="space-y-8 pb-12"
+      className="px-6 lg:px-10 py-6 space-y-8 pb-12"
     >
       {/* ── HEADER ── */}
       <div className="flex flex-col sm:flex-row sm:items-end justify-between gap-5">
         <motion.div initial={{ opacity: 0, x: -20 }} animate={{ opacity: 1, x: 0 }}>
-          <h1 className="font-display font-800 text-3xl sm:text-4xl text-white flex items-center gap-3 tracking-tight">
+          <h1 className="font-display font-800 text-3xl sm:text-4xl flex items-center gap-3 tracking-tight bg-gradient-to-r from-purple-400 to-indigo-400 bg-clip-text text-transparent">
             <Trophy className="w-8 h-8 sm:w-10 sm:h-10 text-amber-400 drop-shadow-[0_0_20px_rgba(251,191,36,0.6)]" />
-            Global Hall of Fame
+            Leaderboard
           </h1>
-          <p className="text-slate-500 text-sm mt-2 max-w-lg font-medium leading-relaxed">
-            Witness the rise of the champions. Real-time standings rendered natively.
+          <p className="text-gray-400 text-sm mt-2 max-w-lg font-medium leading-relaxed">
+            Live ranking of teams based on current scoring data.
           </p>
         </motion.div>
-        <motion.div 
-          initial={{ opacity: 0, scale: 0.9 }} animate={{ opacity: 1, scale: 1 }}
-          className="flex items-center gap-2.5 px-4 py-2 bg-dark-800/80 rounded-xl border border-glass-border shadow-glass backdrop-blur-md self-start sm:self-auto"
-        >
-            <RefreshCw className="w-4 h-4 text-brand-violet animate-spin-slow" />
-            <span className="text-[10px] font-bold text-slate-300 uppercase tracking-widest leading-none">Live Data Feed</span>
-        </motion.div>
+        <div className="flex items-center gap-2.5 px-4 py-2 bg-dark-800/80 rounded-xl border border-glass-border shadow-glass backdrop-blur-md self-start sm:self-auto">
+          <span className="text-[10px] font-bold text-slate-300 uppercase tracking-widest leading-none">Live Data Feed</span>
+        </div>
       </div>
+
+      {error && (
+        <div className="bg-red-500/10 border border-red-500/20 text-red-400 p-4 rounded-xl">
+          <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
+            <p className="text-sm font-medium">{error}</p>
+            <Button variant="secondary" onClick={() => window.location.reload()} className="w-full sm:w-auto hover:bg-red-500/20 border-red-500/30 text-red-400">Retry</Button>
+          </div>
+        </div>
+      )}
 
       {/* ── PODIUM ── */}
       {top3.length > 0 && (
-        <Card className="p-8 sm:p-12 overflow-hidden relative border-brand-violet/20 bg-[#0B0F1A]/50">
+        <Card className="p-8 sm:p-12 overflow-hidden relative border border-white/10 bg-[#0B0F1A]/50 glass-card backdrop-blur-xl">
           <div className="absolute inset-0 bg-gradient-radial-purple pointer-events-none opacity-50 mix-blend-screen" />
           <SectionHeader title="The Elite Three" subtitle="Top performing squads globally" center className="relative z-10" />
           <div className="flex items-end justify-center gap-4 sm:gap-6 max-w-3xl mx-auto pt-10 relative z-10">
@@ -169,19 +178,19 @@ export default function LeaderboardPage() {
 
       {/* ── RANKINGS TABLE ── */}
       <motion.div variants={tableContainer} initial="hidden" animate="show">
-        <Card className="overflow-hidden border-glass-border shadow-[0_8px_32px_rgba(0,0,0,0.4)]">
+        <Card className="overflow-hidden shadow-[0_8px_32px_rgba(0,0,0,0.4)] glass-card border border-white/10 backdrop-blur-xl">
             
             <div className="flex items-center gap-4 px-6 py-4 border-b border-glass-border bg-white/[0.02]">
-              <span className="text-[10px] font-bold text-slate-500 uppercase tracking-widest w-12 text-center">Rank</span>
-              <span className="text-[10px] font-bold text-slate-500 uppercase tracking-widest flex-1">Squad Name</span>
-              <span className="text-[10px] font-bold text-slate-500 uppercase tracking-widest hidden sm:block w-32 text-center">Avg Score</span>
-              <span className="text-[10px] font-bold text-slate-500 uppercase tracking-widest w-24 text-center hidden sm:block">Standing</span>
+              <span className="text-[10px] font-bold text-gray-400 uppercase tracking-widest w-12 text-center">Rank</span>
+              <span className="text-[10px] font-bold text-gray-400 uppercase tracking-widest flex-1">Squad Name</span>
+              <span className="text-[10px] font-bold text-gray-400 uppercase tracking-widest hidden sm:block w-32 text-center">Avg Score</span>
+              <span className="text-[10px] font-bold text-gray-400 uppercase tracking-widest w-24 text-center hidden sm:block">Standing</span>
             </div>
 
             <div className="divide-y divide-glass-border bg-dark-900/40">
             {leaderboard.map((entry, idx) => {
                 const rank = idx + 1
-                const rankColor = idx < 3 ? 'font-black drop-shadow-md' : 'font-bold text-slate-500'
+                const rankColor = idx < 3 ? 'font-black drop-shadow-md' : 'font-bold text-gray-400'
 
                 return (
                 <motion.div variants={tableRow} key={entry.team_id || idx} className="flex items-center gap-4 px-6 py-5 transition-all duration-200 hover:bg-white/[0.04] group">
@@ -198,7 +207,7 @@ export default function LeaderboardPage() {
                       <Avatar name={entry.team_name} size="md" className="ring-2 ring-white/5 group-hover:ring-brand-violet/30 transition-all shadow-md" />
                       <div className="min-w-0">
                           <p className="text-sm sm:text-base font-bold text-white truncate group-hover:text-brand-violet transition-colors">{entry.team_name}</p>
-                          <p className="text-[10px] text-slate-500 font-bold uppercase tracking-wider mt-1">{entry.judge_count} Appraisals</p>
+                          <p className="text-[10px] text-gray-400 font-bold uppercase tracking-wider mt-1">{entry.judge_count} Appraisals</p>
                       </div>
                     </div>
 
@@ -226,8 +235,10 @@ export default function LeaderboardPage() {
                 <motion.div variants={tableRow} className="px-6 py-16 text-center">
                     <EmptyState 
                         icon={Trophy}
-                        title="The Arena is Empty"
-                        description="No team has climbed the mountain yet. Will your squad be the first to claim the throne?"
+                        title="No Rankings Yet"
+                        description="No scored submissions are available yet. Submit a project to appear on the leaderboard."
+                        action={() => navigate('/submissions')}
+                        actionLabel="Go to Submissions"
                     />
                 </motion.div>
             )}

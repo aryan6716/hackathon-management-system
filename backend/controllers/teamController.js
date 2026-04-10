@@ -11,10 +11,11 @@ const generateTeamCode = () =>
 // CREATE TEAM
 // ======================
 const createTeam = asyncHandler(async (req, res) => {
-  const { team_name, event_id } = req.body;
+  const { team_name, name, event_id } = req.body;
   const leader_id = req.user.id;
+  const teamName = team_name || name;
 
-  if (!team_name) {
+  if (!teamName) {
     return res.status(400).json({
       success: false,
       message: 'Team name is required'
@@ -31,7 +32,7 @@ const createTeam = asyncHandler(async (req, res) => {
     }
   }
 
-  const existing = await Team.findByName(team_name);
+  const existing = await Team.findByName(teamName);
   if (existing) {
     return res.status(409).json({
       success: false,
@@ -48,7 +49,7 @@ const createTeam = asyncHandler(async (req, res) => {
   }
 
   const teamId = await Team.create({
-    team_name,
+    team_name: teamName,
     leader_id,
     event_id,
     team_code: teamCode
@@ -61,6 +62,7 @@ const createTeam = asyncHandler(async (req, res) => {
   res.status(201).json({
     success: true,
     team,
+    team_code: teamCode,
     message: `Team created! Code: ${teamCode}`
   });
 });

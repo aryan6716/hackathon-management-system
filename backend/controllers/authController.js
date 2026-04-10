@@ -24,10 +24,11 @@ const generateToken = (user) =>
 // REGISTER
 // ======================
 const register = asyncHandler(async (req, res) => {
-  const { name, email, password, role } = req.body;
+  const { name, email, password } = req.body;
+  const normalizedEmail = email?.trim().toLowerCase();
 
   // ✅ Validation
-  if (!name || !email || !password) {
+  if (!name || !normalizedEmail || !password) {
     return res.status(400).json({
       success: false,
       message: '⚠️ All fields are required'
@@ -35,7 +36,7 @@ const register = asyncHandler(async (req, res) => {
   }
 
   // ✅ Check existing user
-  const existing = await User.findByEmail(email);
+  const existing = await User.findByEmail(normalizedEmail);
   if (existing) {
     return res.status(409).json({
       success: false,
@@ -49,9 +50,9 @@ const register = asyncHandler(async (req, res) => {
   // ✅ Create user (safe role)
   const user = await User.create({
     name,
-    email,
+    email: normalizedEmail,
     password: hashedPassword,
-    role: role || 'participant'
+    role: 'participant'
   });
 
   res.status(201).json({
@@ -67,15 +68,16 @@ const register = asyncHandler(async (req, res) => {
 // ======================
 const login = asyncHandler(async (req, res) => {
   const { email, password } = req.body;
+  const normalizedEmail = email?.trim().toLowerCase();
 
-  if (!email || !password) {
+  if (!normalizedEmail || !password) {
     return res.status(400).json({
       success: false,
       message: '⚠️ Email and password required'
     });
   }
 
-  const user = await User.findByEmail(email);
+  const user = await User.findByEmail(normalizedEmail);
 
   if (!user) {
     return res.status(401).json({

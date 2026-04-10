@@ -1,14 +1,12 @@
 import React, { useState, useRef, useEffect } from 'react'
-import { User, LogOut, LayoutDashboard, ChevronDown, Mail, Moon } from 'lucide-react'
+import { User, LogOut, LayoutDashboard, ChevronDown, Mail } from 'lucide-react'
 import { useNavigate } from 'react-router-dom'
 import { useAuth } from '../../context/AuthContext'
-import { useToast } from '../../context/ToastContext'
 import { Avatar, Divider } from '../ui'
 import clsx from 'clsx'
 
 export default function UserProfileDropdown() {
   const { user, loading, logout } = useAuth()
-  const { showToast } = useToast()
   const navigate = useNavigate()
   const [isOpen, setIsOpen] = useState(false)
   const wrapperRef = useRef(null)
@@ -73,15 +71,6 @@ export default function UserProfileDropdown() {
       description: 'Access your analytics',
       onClick: () => { setIsOpen(false); navigate('/dashboard') }
     },
-    {
-      label: 'Theme (Dark UI)',
-      icon: Moon,
-      description: 'Vercel aesthetic locked',
-      onClick: () => {
-        setIsOpen(false)
-        showToast('Light mode coming soon 🌞. Premium dark aesthetic locked for now.', 'info')
-      }
-    },
   ]
 
   if (loading) {
@@ -95,6 +84,9 @@ export default function UserProfileDropdown() {
       <button
         ref={triggerRef}
         onClick={() => setIsOpen(o => !o)}
+        aria-label="Open profile menu"
+        aria-haspopup="menu"
+        aria-expanded={isOpen}
         className={clsx(
           'flex items-center gap-2.5 p-1 rounded-xl transition-all duration-200 cursor-pointer',
           isOpen
@@ -104,9 +96,9 @@ export default function UserProfileDropdown() {
       >
         {/* Avatar with online dot */}
         <div className="relative flex-shrink-0">
-          <Avatar
-            name={user?.name}
-            size="md"
+              <Avatar
+                name={user?.name}
+                size="md"
             className={clsx(
               'shadow-md transition-all duration-200',
               isOpen ? 'ring-2 ring-brand-violet/50' : 'group-hover:ring-2 group-hover:ring-brand-violet/30'
@@ -135,6 +127,7 @@ export default function UserProfileDropdown() {
       {isOpen && (
         <div
           ref={dropdownRef}
+          role="menu"
           className={clsx(
             // Positioning: anchored to right edge of parent, gap from trigger
             'absolute right-0 top-full mt-2 z-[100]',
@@ -186,6 +179,7 @@ export default function UserProfileDropdown() {
               <button
                 key={i}
                 onClick={item.onClick}
+                role="menuitem"
                 className={clsx(
                   'w-full flex items-center gap-3 px-3 py-2.5 rounded-xl cursor-pointer',
                   'text-slate-400 text-sm',
@@ -213,6 +207,7 @@ export default function UserProfileDropdown() {
           <div className="p-2">
             <button
               onClick={handleLogout}
+              aria-label="Sign out"
               className={clsx(
                 'w-full flex items-center gap-3 px-3 py-2.5 rounded-xl cursor-pointer',
                 'text-red-400/70 text-sm',

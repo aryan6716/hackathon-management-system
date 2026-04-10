@@ -18,7 +18,7 @@ class Event {
     const [rows] = await pool.execute(`
       SELECT 
         e.id,
-        e.title,
+        e.title AS name,
         e.description,
         e.start_date,
         e.end_date,
@@ -42,12 +42,14 @@ class Event {
     const [rows] = await pool.execute(`
       SELECT 
         e.id,
-        e.title,
+        e.title AS name,
         e.description,
         e.start_date,
         e.end_date,
         e.created_by,
-        u.name AS created_by_name
+        u.name AS created_by_name,
+        (SELECT COUNT(*) FROM teams t WHERE t.event_id = e.id) AS team_count,
+        (SELECT COUNT(*) FROM submissions s WHERE s.event_id = e.id) AS submission_count
 
       FROM events e
       LEFT JOIN users u ON e.created_by = u.id

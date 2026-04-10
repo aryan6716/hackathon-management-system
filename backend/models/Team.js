@@ -5,7 +5,7 @@ class Team {
   static async create({ team_name, leader_id, event_id, team_code }) {
     const pool = getPool();
     const [result] = await pool.execute(
-      'INSERT INTO teams (team_name, leader_id, event_id, team_code) VALUES (?, ?, ?, ?)',
+      'INSERT INTO teams (name, leader_id, event_id, team_code) VALUES (?, ?, ?, ?)',
       [team_name, leader_id, event_id || null, team_code]
     );
     return result.insertId;
@@ -13,20 +13,20 @@ class Team {
 
   static async findByName(team_name) {
     const pool = getPool();
-    const [rows] = await pool.execute('SELECT id FROM teams WHERE team_name = ?', [team_name]);
+    const [rows] = await pool.execute('SELECT id FROM teams WHERE name = ?', [team_name]);
     return rows[0];
   }
 
   static async findByCode(team_code) {
     const pool = getPool();
-    const [rows] = await pool.execute('SELECT * FROM teams WHERE team_code = ?', [team_code]);
+    const [rows] = await pool.execute('SELECT *, name AS team_name FROM teams WHERE team_code = ?', [team_code]);
     return rows[0];
   }
 
   static async findById(id) {
     const pool = getPool();
     const [rows] = await pool.execute(`
-      SELECT t.*, u.name AS leader_name, e.name AS event_name
+      SELECT t.*, t.name AS team_name, u.name AS leader_name, e.title AS event_name
       FROM teams t
       LEFT JOIN users u ON t.leader_id = u.id
       LEFT JOIN events e ON t.event_id = e.id
@@ -72,9 +72,9 @@ class Team {
   static async findAll() {
     const pool = getPool();
     const [rows] = await pool.execute(`
-      SELECT t.*, u.name AS leader_name,
+      SELECT t.*, t.name AS team_name, u.name AS leader_name,
         (SELECT COUNT(*) FROM team_members tm WHERE tm.team_id = t.id) AS member_count,
-        e.name AS event_name
+        e.title AS event_name
       FROM teams t
       LEFT JOIN users u ON t.leader_id = u.id
       LEFT JOIN events e ON t.event_id = e.id
@@ -86,7 +86,7 @@ class Team {
   static async findByUser(user_id) {
     const pool = getPool();
     const [rows] = await pool.execute(`
-      SELECT t.*, u.name AS leader_name, e.name AS event_name
+      SELECT t.*, t.name AS team_name, u.name AS leader_name, e.title AS event_name
       FROM teams t
       JOIN team_members tm ON tm.team_id = t.id
       LEFT JOIN users u ON t.leader_id = u.id

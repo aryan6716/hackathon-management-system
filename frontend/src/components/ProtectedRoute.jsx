@@ -9,7 +9,7 @@ export default function ProtectedRoute({ children }) {
   // ✅ Show loader while auth state is being checked
   if (loading) {
     return (
-      <div className="flex h-screen w-full items-center justify-center bg-dark-950 text-brand-violet">
+      <div className="flex h-screen w-full items-center justify-center bg-dark-950 text-brand-violet" aria-label="Loading application">
         <Loader className="w-10 h-10 animate-spin" />
       </div>
     );

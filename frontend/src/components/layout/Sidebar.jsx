@@ -58,7 +58,7 @@ export default function Sidebar() {
         transition={{ type: "spring", stiffness: 300, damping: 30 }}
         className={clsx(
           'fixed top-0 left-0 h-full z-50 flex flex-col',
-          'bg-slate-950/40 backdrop-blur-2xl border-r border-white/5 shadow-2xl transition-all duration-300'
+          'bg-gradient-to-b from-[#0f172a] to-[#020617] backdrop-blur-2xl border-r border-white/5 shadow-2xl transition-all duration-300'
         )}
       >
         {/* Header/Logo */}
@@ -76,7 +76,7 @@ export default function Sidebar() {
                 <Sparkles className="w-5 h-5 text-white" />
               </div>
               <span className="text-white text-xl font-bold tracking-tight whitespace-nowrap bg-gradient-to-r from-white to-slate-400 bg-clip-text text-transparent">
-                HackerPulse
+                HackathonHub
               </span>
             </motion.div>
           )}
@@ -89,6 +89,7 @@ export default function Sidebar() {
 
           <button
             onClick={toggleSidebar}
+            aria-label={sidebarCollapsed ? 'Expand sidebar' : 'Collapse sidebar'}
             className="hidden lg:flex p-1.5 rounded-lg text-slate-500 hover:text-white hover:bg-white/5 transition-all absolute -right-3 top-24 bg-slate-900 border border-white/10 shadow-xl"
           >
             {sidebarCollapsed ? <ChevronRight size={14} /> : <ChevronLeft size={14} />}
@@ -115,8 +116,7 @@ export default function Sidebar() {
                         layoutId="active-pill"
                         initial={{ opacity: 0 }}
                         animate={{ opacity: 1 }}
-                        exit={{ opacity: 0 }}
-                        className="absolute inset-0 bg-indigo-600/10 border border-indigo-500/20 shadow-[0_0_20px_rgba(99,102,241,0.1)] z-0 rounded-xl"
+                        className="absolute inset-0 bg-white/10 text-white shadow-md z-0 rounded-xl"
                       />
                     )}
                   </AnimatePresence>

@@ -10,16 +10,9 @@ const getStats = asyncHandler(async (req, res) => {
   try {
     pool = getPool();
   } catch (err) {
-    // ✅ Fallback mock data
-    return res.json({
-      success: true,
-      stats: {
-        totalUsers: 8,
-        activeEvents: 2,
-        totalTeams: 5,
-        totalProjects: 3
-      },
-      message: 'Mock stats fetched'
+    return res.status(503).json({
+      success: false,
+      message: 'Database unavailable'
     });
   }
 

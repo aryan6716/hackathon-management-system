@@ -2,7 +2,6 @@
 
 const Submission = require('../models/Submission');
 const Team = require('../models/Team');
-const Event = require('../models/Event');
 const { getPool } = require('../config/db');
 const asyncHandler = require('../middleware/asyncHandler');
 
@@ -10,10 +9,11 @@ const asyncHandler = require('../middleware/asyncHandler');
 // SUBMIT PROJECT
 // ======================
 const submitProject = asyncHandler(async (req, res) => {
-  const { title, description, github_link } = req.body;
+  const { title, name, description, github_link } = req.body;
   const user_id = req.user?.id;
+  const projectTitle = title || name;
 
-  if (!title || !description || !github_link) {
+  if (!projectTitle || !description || !github_link) {
     return res.status(400).json({
       success: false,
       message: 'Title, description, and GitHub link are required'
@@ -24,16 +24,9 @@ const submitProject = asyncHandler(async (req, res) => {
   try {
     getPool();
   } catch {
-    return res.status(201).json({
-      success: true,
-      submission: {
-        id: Date.now(),
-        title,
-        description,
-        github_link,
-        team_name: 'Demo Team'
-      },
-      message: 'Mock submission'
+    return res.status(503).json({
+      success: false,
+      message: 'Database unavailable'
     });
   }
 
@@ -65,7 +58,7 @@ const submitProject = asyncHandler(async (req, res) => {
   const submission = await Submission.submit({
     team_id: team.id,
     event_id: team.event_id,
-    title,
+    title: projectTitle,
     description,
     github_link
   });
@@ -125,10 +118,9 @@ const getAllProjects = asyncHandler(async (req, res) => {
   try {
     getPool();
   } catch {
-    return res.json({
-      success: true,
-      submissions: [],
-      message: 'Mock submissions'
+    return res.status(503).json({
+      success: false,
+      message: 'Database unavailable'
     });
   }
 

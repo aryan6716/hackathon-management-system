@@ -8,6 +8,8 @@
  * Usage: roleMiddleware('admin') or roleMiddleware('admin', 'judge')
  */
 const roleMiddleware = (...allowedRoles) => {
+  const normalizedRoles = allowedRoles.flat();
+
   return (req, res, next) => {
     // authMiddleware must run first to populate req.user
     if (!req.user) {
@@ -18,10 +20,10 @@ const roleMiddleware = (...allowedRoles) => {
     }
 
     // Check if the user's role is in the allowed roles list
-    if (!allowedRoles.includes(req.user.role)) {
+    if (!normalizedRoles.includes(req.user.role)) {
       return res.status(403).json({ 
         success: false, 
-        message: `Access denied. Required role: ${allowedRoles.join(' or ')}. Your role: ${req.user.role}` 
+        message: `Access denied. Required role: ${normalizedRoles.join(' or ')}. Your role: ${req.user.role}` 
       });
     }
 

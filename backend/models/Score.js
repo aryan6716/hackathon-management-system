@@ -77,8 +77,8 @@ class Score {
         SELECT 
           sub.id AS submission_id,
           sub.title,
-          t.team_name,
-          e.name AS event_name,
+          t.name AS team_name,
+          e.title AS event_name,
           e.id AS event_id,
           ROUND(COALESCE(AVG(sc.score), 0), 1) AS avg_score,
           COUNT(sc.id) AS judge_count
@@ -104,8 +104,8 @@ class Score {
         LIMIT ? OFFSET ?
       `;
       
-      params.push(limit.toString());
-      params.push(offset.toString());
+      params.push(Number(limit));
+      params.push(Number(offset));
 
       const [rows] = await pool.execute(query, params);
 

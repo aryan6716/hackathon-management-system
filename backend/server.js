@@ -2,48 +2,45 @@ const express = require("express");
 const cors = require("cors");
 require("dotenv").config();
 
-const { connectDB } = require("./config/db");
+const {
+  connectDB,
+  getDbStatus,
+  startDbReconnectLoop
+} = require("./config/db");
 
 const app = express();
 
 // ======================
-// 🔥 CORS CONFIG (FIXED)
-// ======================
-const allowedOrigins = [
-  "http://localhost:5173",
-  "https://hackathonhub.vercel.app",
-  "https://hackathonhub.up.railway.app"
-];
-
-app.use(cors({
-  origin: function (origin, callback) {
-    // allow requests with no origin (mobile apps, postman)
-    if (!origin) return callback(null, true);
-
-    if (allowedOrigins.includes(origin)) {
-      return callback(null, true);
-    } else {
-      return callback(new Error("❌ CORS not allowed"));
-    }
-  },
-  credentials: true,
-  methods: ["GET", "POST", "PUT", "DELETE", "OPTIONS"],
-  allowedHeaders: ["Content-Type", "Authorization"]
-}));
-
-// 🔥 Handle preflight requests
-app.options("*", cors());
-
-// ======================
 // Middleware
 // ======================
+app.use(cors({
+  origin: "*"
+}));
 app.use(express.json());
 
 // ======================
 // Health Check
 // ======================
 app.get("/api/health", (req, res) => {
-  res.json({ status: "OK" });
+  res.status(200).json({ status: "OK" });
+});
+
+// ======================
+// DB Check Middleware
+// ======================
+app.use("/api", (req, res, next) => {
+  console.log(`[API] ${req.method} ${req.originalUrl}`);
+
+  if (req.path === "/health") return next();
+
+  const db = getDbStatus();
+  if (db.isConnected) return next();
+
+  return res.status(503).json({
+    success: false,
+    code: "DB_UNAVAILABLE",
+    message: "Database is currently unavailable. Please try again shortly."
+  });
 });
 
 // ======================
@@ -58,7 +55,7 @@ app.use("/api/leaderboard", require("./routes/leaderboardRoutes"));
 app.use("/api/stats", require("./routes/statsRoutes"));
 
 // ======================
-// Error Handler (GLOBAL)
+// Global Error Handler
 // ======================
 app.use((err, req, res, next) => {
   console.error("❌ Server Error:", err.message);
@@ -70,18 +67,19 @@ app.use((err, req, res, next) => {
 });
 
 // ======================
-// Start Server AFTER DB
+// Start Server
 // ======================
 const startServer = async () => {
   try {
-    await connectDB();
+    await connectDB(); // ✅ correct use of await
 
-    console.log("✅ DB Connected");
+    startDbReconnectLoop();
 
-    const PORT = process.env.PORT || 5000;
+    const PORT = process.env.PORT || 8000;
 
     app.listen(PORT, () => {
       console.log(`🚀 Server running on port ${PORT}`);
+      console.log(`🩺 Health: http://localhost:${PORT}/api/health`);
     });
 
   } catch (err) {
@@ -90,4 +88,14 @@ const startServer = async () => {
   }
 };
 
+// ======================
+// Handle Unhandled Errors
+// ======================
+process.on("unhandledRejection", (err) => {
+  console.error("❌ Unhandled Rejection:", err.message);
+});
+
+// ======================
+// Start App
+// ======================
 startServer();

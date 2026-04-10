@@ -1,9 +1,9 @@
-import React from 'react'
+import React, { useId } from 'react'
 import clsx from 'clsx'
 import { motion, AnimatePresence } from 'framer-motion'
 
 // ── Button ──────────────────────────────────────────────────
-export function Button({ variant = 'primary', size = 'md', children, className, loading, icon: Icon, ...props }) {
+export function Button({ variant = 'primary', size = 'md', children, className, loading, icon: Icon, type = 'button', disabled, ...props }) {
   const base = 'btn-premium'
   const variants = {
     primary: 'btn-premium-primary',
@@ -21,10 +21,12 @@ export function Button({ variant = 'primary', size = 'md', children, className, 
   
   return (
     <motion.button
+      type={type}
       whileHover={{ scale: 1.02, y: -1 }}
       whileTap={{ scale: 0.96 }}
       className={clsx(base, variants[variant], sizes[size], className)}
-      disabled={loading}
+      disabled={disabled || loading}
+      aria-busy={loading || undefined}
       {...props}
     >
       {loading ? (
@@ -117,9 +119,13 @@ export function Badge({ variant = 'default', children, className }) {
 
 // ── Input ──────────────────────────────────────────────────
 export function Input({ label, error, icon: Icon, className, ...props }) {
+  const generatedId = useId()
+  const inputId = props.id || generatedId
+  const errorId = error ? `${inputId}-error` : undefined
+
   return (
     <div className="space-y-1.5">
-      {label && <label className="block text-xs font-semibold text-slate-400 ml-1">{label}</label>}
+      {label && <label htmlFor={inputId} className="block text-xs font-semibold text-slate-400 ml-1">{label}</label>}
       <div className="relative group">
         {Icon && (
           <div className="absolute left-4 top-1/2 -translate-y-1/2 text-slate-500 group-focus-within:text-indigo-400 transition-colors">
@@ -127,12 +133,15 @@ export function Input({ label, error, icon: Icon, className, ...props }) {
           </div>
         )}
         <input
+          id={inputId}
           className={clsx(
             'input-premium',
             Icon && 'pl-11',
             error && 'border-red-500/50 focus:border-red-500 focus:ring-red-500/10 animate-shake',
             className
           )}
+          aria-invalid={!!error}
+          aria-describedby={errorId}
           {...props}
         />
       </div>
@@ -142,6 +151,7 @@ export function Input({ label, error, icon: Icon, className, ...props }) {
             initial={{ opacity: 0, height: 0 }} 
             animate={{ opacity: 1, height: 'auto' }} 
             exit={{ opacity: 0, height: 0 }}
+            id={errorId}
             className="text-[11px] font-medium text-red-400 ml-1"
           >
             {error}
@@ -154,10 +164,14 @@ export function Input({ label, error, icon: Icon, className, ...props }) {
 
 // ── Select ──────────────────────────────────────────────────
 export function Select({ label, options = [], className, ...props }) {
+  const generatedId = useId()
+  const selectId = props.id || generatedId
+
   return (
     <div className="space-y-1.5">
-      {label && <label className="block text-xs font-semibold text-slate-400 ml-1">{label}</label>}
+      {label && <label htmlFor={selectId} className="block text-xs font-semibold text-slate-400 ml-1">{label}</label>}
       <select
+        id={selectId}
         className={clsx(
           'input-premium cursor-pointer appearance-none',
           className
@@ -218,10 +232,14 @@ export function EmptyState({ icon: Icon, title, description, action, actionLabel
 }
 
 // ── Section Header ──────────────────────────────────────────────────
-export function SectionHeader({ title, subtitle, action, actionLabel, onAction }) {
+export function SectionHeader({ title, subtitle, action, actionLabel, onAction, center = false, className }) {
   return (
-    <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 mb-8">
-      <div>
+    <div className={clsx(
+      'flex flex-col sm:flex-row sm:items-center justify-between gap-4 mb-8',
+      center && 'items-center text-center',
+      className
+    )}>
+      <div className={center ? 'text-center' : ''}>
         <h2 className="text-2xl font-bold text-white tracking-tight">{title}</h2>
         {subtitle && <p className="text-sm font-medium text-slate-500 mt-1">{subtitle}</p>}
       </div>
@@ -249,7 +267,7 @@ export function Avatar({ name, size = 'md', className, src }) {
         'group-hover:border-indigo-500/50 transition-colors'
       )}>
         {src ? (
-          <img src={src} alt={name} className="h-full w-full object-cover" />
+          <img src={src} alt={name || 'Avatar'} className="h-full w-full object-cover" />
         ) : (
           initials
         )}
@@ -301,6 +319,8 @@ export function Tag({ children, className, variant = 'default' }) {
 export function FilterChip({ label, active, onClick, className }) {
   return (
     <button
+      type="button"
+      aria-pressed={active}
       onClick={onClick}
       className={clsx(
         'px-4 py-2 rounded-xl border text-sm font-bold transition-all duration-300',
