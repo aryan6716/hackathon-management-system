@@ -1,37 +1,35 @@
 // backend/controllers/statsController.js
 
-const { getPool } = require('../config/db');
+const User = require('../models/User');
+const Event = require('../models/Event');
+const Team = require('../models/Team');
+const Submission = require('../models/Submission');
 const asyncHandler = require('../middleware/asyncHandler');
 
 // GET /api/stats
 const getStats = asyncHandler(async (req, res) => {
-  let pool;
-
   try {
-    pool = getPool();
+    const usersCount = await User.countDocuments();
+    const eventsCount = await Event.countDocuments({ end_date: { $gt: new Date() } });
+    const teamsCount = await Team.countDocuments();
+    const projectsCount = await Submission.countDocuments();
+
+    res.json({
+      success: true,
+      stats: {
+        totalUsers: usersCount,
+        activeEvents: eventsCount,
+        totalTeams: teamsCount,
+        totalProjects: projectsCount
+      },
+      message: 'Stats fetched successfully'
+    });
   } catch (err) {
     return res.status(503).json({
       success: false,
-      message: 'Database unavailable'
+      message: 'Database unavailable or error fetching stats'
     });
   }
-
-  // ✅ Use single pool instance
-  const [users] = await pool.execute('SELECT COUNT(*) as count FROM users');
-  const [events] = await pool.execute('SELECT COUNT(*) as count FROM events WHERE end_date > NOW()');
-  const [teams] = await pool.execute('SELECT COUNT(*) as count FROM teams');
-  const [projects] = await pool.execute('SELECT COUNT(*) as count FROM submissions');
-
-  res.json({
-    success: true,
-    stats: {
-      totalUsers: users[0].count,
-      activeEvents: events[0].count,
-      totalTeams: teams[0].count,
-      totalProjects: projects[0].count
-    },
-    message: 'Stats fetched successfully'
-  });
 });
 
 module.exports = { getStats };

@@ -5,6 +5,9 @@ import { Card, Badge, Avatar, Skeleton, SectionHeader, EmptyState, Button } from
 import { apiGet } from '../utils/api'
 import { useNavigate } from 'react-router-dom'
 import clsx from 'clsx'
+import { useLeaderboard } from '../hooks/useLeaderboard'
+import { LeaderboardSkeleton } from '../components/leaderboard/LeaderboardSkeleton'
+import { LeaderboardRow } from '../components/leaderboard/LeaderboardRow'
 
 const podiumConfig = {
   1: { color: 'from-amber-400/20 to-amber-600/5', border: 'border-amber-400/30', ring: 'ring-amber-400/40', label: 'text-amber-300', score: 'text-amber-400', icon: '🥇', size: 'lg', height: 'pt-8 pb-4', delay: 0.1 },
@@ -54,31 +57,6 @@ function PodiumCard({ entry, position }) {
   )
 }
 
-const LeaderboardSkeleton = () => (
-  <div className="px-6 lg:px-10 py-6 space-y-8 pb-12">
-    <div className="flex justify-between items-end">
-        <div className="space-y-3">
-            <Skeleton className="h-10 w-64" />
-            <Skeleton className="h-4 w-48" />
-        </div>
-    </div>
-    <Card className="p-8 h-[350px] flex items-end justify-center gap-6">
-        <Skeleton className="h-[180px] w-32 rounded-t-2xl" />
-        <Skeleton className="h-[250px] w-40 rounded-t-2xl" />
-        <Skeleton className="h-[150px] w-32 rounded-t-2xl" />
-    </Card>
-    <Card className="overflow-hidden">
-        {[1,2,3,4,5].map(i => (
-            <div key={i} className="flex items-center gap-4 px-6 py-5 border-b border-white/5">
-                <Skeleton className="h-6 w-8" />
-                <Skeleton className="h-12 w-12 rounded-full" />
-                <Skeleton className="h-6 w-56 flex-1" />
-                <Skeleton className="h-6 w-24 hidden sm:block" />
-            </div>
-        ))}
-    </Card>
-  </div>
-)
 
 const tableContainer = {
   hidden: { opacity: 0 },
@@ -95,24 +73,7 @@ const tableRow = {
 
 export default function LeaderboardPage() {
   const navigate = useNavigate()
-  const [leaderboard, setLeaderboard] = useState([])
-  const [loading, setLoading] = useState(true)
-  const [error, setError] = useState('')
-
-  useEffect(() => {
-    const fetchLeaderboard = async () => {
-      try {
-        setError('')
-        const data = await apiGet('/leaderboard')
-        setLeaderboard(Array.isArray(data) ? data : (Array.isArray(data?.leaderboard) ? data.leaderboard : []))
-      } catch (err) {
-        setError(err.message || 'Could not load leaderboard.')
-      } finally {
-        setLoading(false)
-      }
-    }
-    fetchLeaderboard()
-  }, [])
+  const { leaderboard, loading, error } = useLeaderboard()
 
   const top3 = [
     leaderboard[1], // 2nd
@@ -188,48 +149,9 @@ export default function LeaderboardPage() {
             </div>
 
             <div className="divide-y divide-glass-border bg-dark-900/40">
-            {leaderboard.map((entry, idx) => {
-                const rank = idx + 1
-                const rankColor = idx < 3 ? 'font-black drop-shadow-md' : 'font-bold text-gray-400'
-
-                return (
-                <motion.div variants={tableRow} key={entry.team_id || idx} className="flex items-center gap-4 px-6 py-5 transition-all duration-200 hover:bg-white/[0.04] group">
-                    {/* Rank */}
-                    <div className="w-12 text-center flex-shrink-0">
-                    {idx < 3
-                        ? <span className="text-[22px] drop-shadow-[0_0_10px_rgba(255,255,255,0.2)]">{['🥇', '🥈', '🥉'][idx]}</span>
-                        : <span className={clsx('font-display text-base', rankColor)}>#{rank}</span>
-                    }
-                    </div>
-
-                    {/* Team */}
-                    <div className="flex items-center gap-4 flex-1 min-w-0">
-                      <Avatar name={entry.team_name} size="md" className="ring-2 ring-white/5 group-hover:ring-brand-violet/30 transition-all shadow-md" />
-                      <div className="min-w-0">
-                          <p className="text-sm sm:text-base font-bold text-white truncate group-hover:text-brand-violet transition-colors">{entry.team_name}</p>
-                          <p className="text-[10px] text-gray-400 font-bold uppercase tracking-wider mt-1">{entry.judge_count} Appraisals</p>
-                      </div>
-                    </div>
-
-                    {/* Score */}
-                    <div className="hidden sm:block w-32 text-center flex-shrink-0">
-                        <div className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-xl bg-dark-800/80 border border-glass-border shadow-inner">
-                            <Zap className="w-3.5 h-3.5 text-brand-accent drop-shadow-glow" />
-                            <span className="font-display font-900 text-base text-white tracking-tighter">
-                                {Number(entry.avg_score || entry.final_score || 0).toFixed(1)}
-                            </span>
-                        </div>
-                    </div>
-
-                    {/* Status */}
-                    <div className="hidden sm:block w-24 text-center flex-shrink-0">
-                      <Badge variant={idx < 10 ? 'active' : 'default'} className="!px-3 !py-1 scale-95">
-                          {idx < 10 ? 'Legendary' : 'Pro'}
-                      </Badge>
-                    </div>
-                </motion.div>
-                )
-            })}
+            {leaderboard.map((entry, idx) => (
+                <LeaderboardRow key={entry.team_id || idx} entry={entry} idx={idx} />
+            ))}
 
             {leaderboard.length === 0 && !loading && (
                 <motion.div variants={tableRow} className="px-6 py-16 text-center">

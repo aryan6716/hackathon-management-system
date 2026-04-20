@@ -1,100 +1,119 @@
-// backend/models/Team.js
-const { getPool } = require('../config/db');
+const mongoose = require('mongoose');
 
-class Team {
-  static async create({ team_name, leader_id, event_id, team_code }) {
-    const pool = getPool();
-    const [result] = await pool.execute(
-      'INSERT INTO teams (name, leader_id, event_id, team_code) VALUES (?, ?, ?, ?)',
-      [team_name, leader_id, event_id || null, team_code]
-    );
-    return result.insertId;
-  }
+const teamSchema = new mongoose.Schema({
+  name: { type: String, required: true, unique: true },
+  leader_id: { type: mongoose.Schema.Types.ObjectId, ref: 'User' },
+  event_id: { type: mongoose.Schema.Types.ObjectId, ref: 'Event' },
+  team_code: { type: String, required: true, unique: true },
+  members: [{
+    user_id: { type: mongoose.Schema.Types.ObjectId, ref: 'User' },
+    joined_at: { type: Date, default: Date.now }
+  }]
+}, { timestamps: { createdAt: 'created_at', updatedAt: false } });
 
-  static async findByName(team_name) {
-    const pool = getPool();
-    const [rows] = await pool.execute('SELECT id FROM teams WHERE name = ?', [team_name]);
-    return rows[0];
-  }
+teamSchema.statics.create = async function({ team_name, leader_id, event_id, team_code }) {
+  const team = new this({
+    name: team_name,
+    leader_id,
+    event_id: event_id || null,
+    team_code
+  });
+  await team.save();
+  return team._id.toHexString();
+};
 
-  static async findByCode(team_code) {
-    const pool = getPool();
-    const [rows] = await pool.execute('SELECT *, name AS team_name FROM teams WHERE team_code = ?', [team_code]);
-    return rows[0];
-  }
+teamSchema.statics.findByName = async function(team_name) {
+  const t = await this.findOne({ name: team_name }).lean();
+  if (!t) return null;
+  return { id: t._id.toHexString() };
+};
 
-  static async findById(id) {
-    const pool = getPool();
-    const [rows] = await pool.execute(`
-      SELECT t.*, t.name AS team_name, u.name AS leader_name, e.title AS event_name
-      FROM teams t
-      LEFT JOIN users u ON t.leader_id = u.id
-      LEFT JOIN events e ON t.event_id = e.id
-      WHERE t.id = ?
-    `, [id]);
-    return rows[0];
-  }
+teamSchema.statics.findByCode = async function(team_code) {
+  const t = await this.findOne({ team_code }).lean();
+  if (!t) return null;
+  return { ...t, id: t._id.toHexString(), team_name: t.name };
+};
 
-  static async addMember(team_id, user_id) {
-    const pool = getPool();
-    await pool.execute('INSERT INTO team_members (team_id, user_id) VALUES (?, ?)', [team_id, user_id]);
-  }
+teamSchema.statics.findById = async function(id) {
+  const t = await this.findOne({ _id: id })
+    .populate('leader_id', 'name')
+    .populate('event_id', 'title')
+    .lean();
+  if (!t) return null;
+  
+  return {
+    ...t,
+    id: t._id.toHexString(),
+    team_name: t.name,
+    leader_name: t.leader_id?.name,
+    event_name: t.event_id?.title
+  };
+};
 
-  static async isMember(team_id, user_id) {
-    const pool = getPool();
-    const [rows] = await pool.execute(
-      'SELECT id FROM team_members WHERE team_id = ? AND user_id = ?',
-      [team_id, user_id]
-    );
-    return rows.length > 0;
-  }
+teamSchema.statics.addMember = async function(team_id, user_id) {
+  await this.updateOne(
+    { _id: team_id },
+    { $addToSet: { members: { user_id } } }
+  );
+};
 
-  static async hasTeamForEvent(user_id, event_id) {
-    const pool = getPool();
-    const [rows] = await pool.execute(`
-      SELECT tm.id FROM team_members tm
-      JOIN teams t ON tm.team_id = t.id
-      WHERE tm.user_id = ? AND t.event_id = ?
-    `, [user_id, event_id]);
-    return rows.length > 0;
-  }
+teamSchema.statics.isMember = async function(team_id, user_id) {
+  const t = await this.findOne({ _id: team_id, "members.user_id": user_id }).lean();
+  return !!t;
+};
 
-  static async getMembers(team_id) {
-    const pool = getPool();
-    const [rows] = await pool.execute(`
-      SELECT u.id, u.name, u.email, tm.joined_at
-      FROM team_members tm JOIN users u ON tm.user_id = u.id
-      WHERE tm.team_id = ?
-    `, [team_id]);
-    return rows;
-  }
+teamSchema.statics.hasTeamForEvent = async function(user_id, event_id) {
+  const t = await this.findOne({ "members.user_id": user_id, event_id }).lean();
+  return !!t;
+};
 
-  static async findAll() {
-    const pool = getPool();
-    const [rows] = await pool.execute(`
-      SELECT t.*, t.name AS team_name, u.name AS leader_name,
-        (SELECT COUNT(*) FROM team_members tm WHERE tm.team_id = t.id) AS member_count,
-        e.title AS event_name
-      FROM teams t
-      LEFT JOIN users u ON t.leader_id = u.id
-      LEFT JOIN events e ON t.event_id = e.id
-      ORDER BY t.created_at DESC
-    `);
-    return rows;
-  }
+teamSchema.statics.getMembers = async function(team_id) {
+  const team = await this.findOne({ _id: team_id }).populate('members.user_id', 'name email').lean();
+  if (!team || !team.members) return [];
 
-  static async findByUser(user_id) {
-    const pool = getPool();
-    const [rows] = await pool.execute(`
-      SELECT t.*, t.name AS team_name, u.name AS leader_name, e.title AS event_name
-      FROM teams t
-      JOIN team_members tm ON tm.team_id = t.id
-      LEFT JOIN users u ON t.leader_id = u.id
-      LEFT JOIN events e ON t.event_id = e.id
-      WHERE tm.user_id = ?
-    `, [user_id]);
-    return rows[0];
-  }
-}
+  return team.members.map(m => ({
+    id: m.user_id?._id,
+    name: m.user_id?.name,
+    email: m.user_id?.email,
+    joined_at: m.joined_at
+  }));
+};
 
-module.exports = Team;
+teamSchema.statics.findAll = async function() {
+  const teams = await this.find()
+    .populate('leader_id', 'name')
+    .populate('event_id', 'title')
+    .sort({ created_at: -1 })
+    .lean();
+
+  return teams.map(t => ({
+    ...t,
+    id: t._id.toHexString(),
+    team_name: t.name,
+    leader_name: t.leader_id?.name,
+    event_name: t.event_id?.title,
+    member_count: t.members ? t.members.length : 0
+  }));
+};
+
+teamSchema.statics.findByUser = async function(user_id) {
+  const t = await this.findOne({ "members.user_id": user_id })
+    .populate('leader_id', 'name')
+    .populate('event_id', 'title')
+    .lean();
+  
+  if (!t) return null;
+
+  return {
+    ...t,
+    id: t._id.toHexString(),
+    team_name: t.name,
+    leader_name: t.leader_id?.name,
+    event_name: t.event_id?.title
+  };
+};
+
+teamSchema.virtual('id').get(function() { return this._id.toHexString(); });
+teamSchema.set('toJSON', { virtuals: true });
+
+module.exports = mongoose.model('Team', teamSchema);

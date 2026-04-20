@@ -12,73 +12,48 @@ import { apiGet } from "../utils/api";
 import { StaggerContainer, StaggerItem } from "../components/ui/Animations";
 import clsx from 'clsx';
 
+import { useDashboard } from "../hooks/useDashboard";
+
 export default function Dashboard() {
   const navigate = useNavigate();
   const { user } = useAuth();
 
-  const [stats, setStats] = useState({
-    users: 0,
-    events: 0,
-    teams: 0,
-    projects: 0,
-  });
-
-  const [leaderboard, setLeaderboard] = useState([]);
-  const [loading, setLoading] = useState(true);
-  const [error, setError] = useState("");
-
-  const safeFetch = async (url) => {
-    try {
-      return await apiGet(url);
-    } catch (err) {
-      return null;
-    }
-  };
-
-  useEffect(() => {
-    const loadData = async () => {
-      try {
-        setLoading(true);
-        const [statsData, leaderboardData] = await Promise.all([
-          safeFetch("/stats"),
-          safeFetch("/leaderboard"),
-        ]);
-        
-        setStats({
-          users: statsData?.stats?.totalUsers || statsData?.totalUsers || 0,
-          events: statsData?.stats?.activeEvents || statsData?.activeEvents || 0,
-          teams: statsData?.stats?.totalTeams || statsData?.totalTeams || 0,
-          projects: statsData?.stats?.totalProjects || statsData?.totalProjects || 0,
-        });
-
-        const safeLeaderboard = Array.isArray(leaderboardData) ? leaderboardData : (Array.isArray(leaderboardData?.leaderboard) ? leaderboardData.leaderboard : []);
-        setLeaderboard(
-          safeLeaderboard.slice(0, 5).map((l, i) => ({
-            rank: i + 1,
-            name: l.team_name || "Unknown",
-            score: l.final_score || l.score || l.avg_score || 0,
-          }))
-        );
-      } catch (err) {
-        setError(err.message);
-      } finally {
-        setLoading(false);
-      }
-    };
-
-    loadData();
-  }, []);
+  const { stats, leaderboard, loading, error } = useDashboard();
 
   if (loading) {
     return (
-      <div className="min-h-screen flex flex-col items-center justify-center gap-6 p-8">
-        <div className="relative">
-          <div className="w-16 h-16 rounded-full border-t-2 border-indigo-500 animate-spin" />
-          <div className="absolute inset-0 flex items-center justify-center">
-            <Zap className="w-6 h-6 text-indigo-400 animate-pulse" />
+      <div className="px-6 lg:px-10 py-6 space-y-10 pb-20 animate-pulse">
+        {/* HEADER SKELETON */}
+        <div className="flex flex-col md:flex-row md:items-end justify-between gap-6">
+          <div className="space-y-4">
+            <div className="h-6 w-24 bg-white/10 rounded-full" />
+            <div className="h-10 w-64 bg-white/10 rounded-lg" />
+            <div className="h-12 w-full max-w-sm bg-white/5 rounded-lg" />
+          </div>
+          <div className="h-12 w-48 bg-white/10 rounded-2xl" />
+        </div>
+
+        {/* STATS SKELETON */}
+        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6">
+          {[1, 2, 3, 4].map(i => (
+            <div key={i} className="h-32 bg-white/5 border border-white/5 rounded-2xl" />
+          ))}
+        </div>
+
+        <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
+          {/* LEADERBOARD SKELETON */}
+          <div className="lg:col-span-2 space-y-6">
+            <div className="h-6 w-48 bg-white/10 rounded" />
+            <div className="h-96 bg-white/5 border border-white/5 rounded-[24px]" />
+          </div>
+          
+          {/* SIDE ACTIVITY SKELETON */}
+          <div className="space-y-6">
+            <div className="h-6 w-32 bg-white/10 rounded" />
+            <div className="h-24 bg-white/5 border border-white/5 rounded-[24px]" />
+            <div className="h-24 bg-white/5 border border-white/5 rounded-[24px]" />
           </div>
         </div>
-        <p className="text-gray-400 font-bold uppercase tracking-[0.2em] text-xs">Loading dashboard...</p>
       </div>
     );
   }

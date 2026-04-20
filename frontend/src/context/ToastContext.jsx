@@ -53,6 +53,20 @@ export const ToastProvider = ({ children }) => {
     toast.dismiss(id)
   }, [])
 
+  React.useEffect(() => {
+    const handleToastError = (e) => {
+      // Avoid spamming the same error
+      showToast(e.detail, 'error')
+    }
+    window.addEventListener('toast_error', handleToastError)
+    window.addEventListener('toast_success', (e) => showToast(e.detail, 'success'))
+
+    return () => {
+      window.removeEventListener('toast_error', handleToastError)
+      window.removeEventListener('toast_success', (e) => showToast(e.detail, 'success'))
+    }
+  }, [showToast])
+
   return (
     <ToastContext.Provider value={{ showToast, dismissToast }}>
       {children}

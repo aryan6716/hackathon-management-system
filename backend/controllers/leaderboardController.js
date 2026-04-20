@@ -2,7 +2,6 @@
 
 const Score = require('../models/Score');
 const asyncHandler = require('../middleware/asyncHandler');
-const { getPool } = require('../config/db');
 
 // ======================
 // SUBMIT SCORE
@@ -44,15 +43,6 @@ const submitScore = asyncHandler(async (req, res) => {
 // GET LEADERBOARD
 // ======================
 const getLeaderboard = asyncHandler(async (req, res) => {
-  try {
-    getPool();
-  } catch (e) {
-    return res.status(503).json({
-      success: false,
-      message: 'Database unavailable'
-    });
-  }
-
   const event_id = req.params.eventId || req.query.event_id || null;
   const limit = Math.max(1, parseInt(req.query.limit) || 50);
   const offset = Math.max(0, parseInt(req.query.offset) || 0);

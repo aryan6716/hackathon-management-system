@@ -1,127 +1,122 @@
-// backend/models/Score.js
+const mongoose = require('mongoose');
 
-const { getPool } = require('../config/db');
-
-// ======================
-// Simple in-memory cache (5 sec)
-// ======================
+// Simple in-memory cache
 let leaderboardCache = new Map();
 
-class Score {
+const scoreSchema = new mongoose.Schema({
+  submission_id: { type: mongoose.Schema.Types.ObjectId, ref: 'Submission', required: true },
+  judge_id: { type: mongoose.Schema.Types.ObjectId, ref: 'User', required: true },
+  score: { type: Number, required: true },
+  feedback: { type: String, default: '' },
+}, { timestamps: { createdAt: 'scored_at', updatedAt: 'scored_at' } });
 
-  // ======================
-  // Submit / Update Score
-  // ======================
-  static async submitScore({ submission_id, judge_id, score, feedback }) {
-    const pool = getPool();
-    try {
-      await pool.execute(
-        `INSERT INTO scores (submission_id, judge_id, score, feedback) 
-         VALUES (?, ?, ?, ?)
-         ON DUPLICATE KEY UPDATE 
-           score = VALUES(score), 
-           feedback = VALUES(feedback), 
-           scored_at = CURRENT_TIMESTAMP`,
-        [submission_id, judge_id, score, feedback || '']
-      );
+// Ensure one score per judge per submission
+scoreSchema.index({ submission_id: 1, judge_id: 1 }, { unique: true });
 
-      // 🧠 Invalidate entire cache map when new score is added
-      leaderboardCache.clear();
+scoreSchema.statics.submitScore = async function({ submission_id, judge_id, score, feedback }) {
+  await this.findOneAndUpdate(
+    { submission_id, judge_id },
+    { score, feedback: feedback || '', scored_at: new Date() },
+    { upsert: true, new: true }
+  );
 
-    } catch (error) {
-      console.error('submitScore error:', error);
-      throw new Error('Failed to submit score');
-    }
+  leaderboardCache.clear();
+};
+
+scoreSchema.statics.getScoresBySubmission = async function(submission_id) {
+  const scores = await this.find({ submission_id })
+    .populate('judge_id', 'name')
+    .sort({ scored_at: -1 })
+    .lean();
+
+  return scores.map(sc => ({
+    id: sc._id.toHexString(),
+    score: sc.score,
+    feedback: sc.feedback,
+    scored_at: sc.scored_at,
+    judge_name: sc.judge_id?.name
+  }));
+};
+
+scoreSchema.statics.getLeaderboard = async function(event_id, limit = 50, offset = 0) {
+  const cacheKey = `board_${event_id || 'all'}_${limit}_${offset}`;
+  const cached = leaderboardCache.get(cacheKey);
+
+  if (cached && Date.now() - cached.timestamp < 5000) {
+    return cached.data;
   }
 
-
-  // ======================
-  // Get scores for one submission
-  // ======================
-  static async getScoresBySubmission(submission_id) {
-    const pool = getPool();
-    try {
-      const [rows] = await pool.execute(
-        `SELECT sc.id, sc.score, sc.feedback, sc.scored_at,
-                u.name AS judge_name
-         FROM scores sc
-         JOIN users u ON sc.judge_id = u.id
-         WHERE sc.submission_id = ?`,
-        [submission_id]
-      );
-
-      return rows;
-
-    } catch (error) {
-      console.error('getScoresBySubmission error:', error);
-      return [];
-    }
+  const Submission = mongoose.model('Submission');
+  
+  let matchQuery = {};
+  if (event_id) {
+    matchQuery.event_id = new mongoose.Types.ObjectId(event_id);
   }
 
-
-  // ======================
-  // Leaderboard (OPTIMIZED & PAGINATED)
-  // ======================
-  static async getLeaderboard(event_id, limit = 50, offset = 0) {
-    const pool = getPool();
-    try {
-      const cacheKey = `board_${event_id || 'all'}_${limit}_${offset}`;
-      const cached = leaderboardCache.get(cacheKey);
-
-      // ⚡ Use cache if fresh (5 sec)
-      if (cached && Date.now() - cached.timestamp < 5000) {
-        return cached.data;
+  const pipeline = [
+    { $match: matchQuery },
+    // Lookup scores
+    {
+      $lookup: {
+        from: 'scores', // Mongoose usually lowercases and pluralizes model names
+        localField: '_id',
+        foreignField: 'submission_id',
+        as: 'scores'
       }
-
-      let query = `
-        SELECT 
-          sub.id AS submission_id,
-          sub.title,
-          t.name AS team_name,
-          e.title AS event_name,
-          e.id AS event_id,
-          ROUND(COALESCE(AVG(sc.score), 0), 1) AS avg_score,
-          COUNT(sc.id) AS judge_count
-
-        FROM submissions sub
-
-        JOIN teams t ON sub.team_id = t.id
-        LEFT JOIN events e ON sub.event_id = e.id
-        LEFT JOIN scores sc ON sc.submission_id = sub.id
-      `;
-
-      const params = [];
-
-      if (event_id) {
-        query += ` WHERE sub.event_id = ? `;
-        params.push(event_id);
+    },
+    // Only where there are scores
+    { $match: { 'scores.0': { $exists: true } } },
+    // Lookup team
+    {
+      $lookup: {
+        from: 'teams',
+        localField: 'team_id',
+        foreignField: '_id',
+        as: 'team'
       }
+    },
+    { $unwind: { path: '$team', preserveNullAndEmptyArrays: true } },
+    // Lookup event
+    {
+      $lookup: {
+        from: 'events',
+        localField: 'event_id',
+        foreignField: '_id',
+        as: 'event'
+      }
+    },
+    { $unwind: { path: '$event', preserveNullAndEmptyArrays: true } },
+    // Calculate fields
+    {
+      $project: {
+        submission_id: '$_id',
+        title: 1,
+        team_name: '$team.name',
+        event_name: '$event.title',
+        event_id: 1,
+        judge_count: { $size: '$scores' },
+        avg_score: { $avg: '$scores.score' }
+      }
+    },
+    { $sort: { avg_score: -1 } },
+    { $skip: Number(offset) },
+    { $limit: Number(limit) }
+  ];
 
-      query += `
-        GROUP BY sub.id
-        HAVING judge_count > 0
-        ORDER BY avg_score DESC
-        LIMIT ? OFFSET ?
-      `;
-      
-      params.push(Number(limit));
-      params.push(Number(offset));
+  const results = await Submission.aggregate(pipeline);
 
-      const [rows] = await pool.execute(query, params);
+  const formatted = results.map(row => ({
+    ...row,
+    submission_id: row.submission_id.toString(),
+    avg_score: Number(row.avg_score.toFixed(1))
+  }));
 
-      // 🧠 Save to cache
-      leaderboardCache.set(cacheKey, {
-        data: rows,
-        timestamp: Date.now()
-      });
+  leaderboardCache.set(cacheKey, {
+    data: formatted,
+    timestamp: Date.now()
+  });
 
-      return rows;
+  return formatted;
+};
 
-    } catch (error) {
-      console.error('getLeaderboard error:', error);
-      return [];
-    }
-  }
-}
-
-module.exports = Score;
+module.exports = mongoose.model('Score', scoreSchema);

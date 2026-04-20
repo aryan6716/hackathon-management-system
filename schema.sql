@@ -19,7 +19,7 @@ CREATE TABLE IF NOT EXISTS users (
 -- Events table: hackathon events created by admin
 CREATE TABLE IF NOT EXISTS events (
   id INT AUTO_INCREMENT PRIMARY KEY,
-  name VARCHAR(200) NOT NULL,
+  title VARCHAR(200) NOT NULL,
   description TEXT,
   start_date DATETIME NOT NULL,
   end_date DATETIME NOT NULL,
@@ -31,7 +31,7 @@ CREATE TABLE IF NOT EXISTS events (
 -- Teams table: teams created by participants
 CREATE TABLE IF NOT EXISTS teams (
   id INT AUTO_INCREMENT PRIMARY KEY,
-  team_name VARCHAR(100) NOT NULL UNIQUE,
+  name VARCHAR(100) NOT NULL UNIQUE,
   leader_id INT NOT NULL,
   event_id INT,
   team_code VARCHAR(10) NOT NULL UNIQUE,

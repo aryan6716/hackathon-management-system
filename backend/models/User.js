@@ -1,76 +1,45 @@
-// backend/models/User.js
-const { getPool } = require('../config/db');
+const mongoose = require('mongoose');
 
-class User {
+const userSchema = new mongoose.Schema({
+  name: { type: String, required: true },
+  email: { type: String, required: true, unique: true },
+  password: { type: String, required: true },
+  role: { type: String, default: 'participant', enum: ['participant', 'judge', 'admin'] }
+}, { timestamps: { createdAt: 'created_at', updatedAt: false } });
 
-  // ======================
-  // FIND BY EMAIL
-  // ======================
-  static async findByEmail(email) {
-    const pool = getPool();
+// Static methods to replace MySQL ones
+userSchema.statics.findByEmail = async function(email) {
+  return this.findOne({ email });
+};
 
-    const [rows] = await pool.execute(
-      'SELECT * FROM users WHERE email = ?',
-      [email]
-    );
+userSchema.statics.findById = async function(id) {
+  return this.findOne({ _id: id });
+};
 
-    return rows[0];
+userSchema.statics.create = async function({ name, email, password, role }) {
+  if (!name || !email || !password) {
+    throw new Error("Missing required fields");
   }
+  const user = new this({ name, email, password, role: role || 'participant' });
+  await user.save();
+  return user;
+};
 
-  // ======================
-  // FIND BY ID
-  // ======================
-  static async findById(id) {
-    const pool = getPool();
+userSchema.statics.findAllParticipants = async function() {
+  return this.find({ role: 'participant' }).select('id name email created_at');
+};
 
-    const [rows] = await pool.execute(
-      `SELECT id, name, email, role, created_at 
-       FROM users WHERE id = ?`,
-      [id]
-    );
-
-    return rows[0];
+// Virtual for 'id' to map _id strings
+userSchema.virtual('id').get(function() {
+  return this._id.toHexString();
+});
+userSchema.set('toJSON', { 
+  virtuals: true,
+  transform: function (doc, ret) {
+    delete ret.password;
+    delete ret.__v;
+    return ret;
   }
+});
 
-  // ======================
-  // CREATE USER (FIXED)
-  // ======================
-  static async create({ name, email, password, role }) {
-    const pool = getPool();
-
-    // ✅ safety check
-    if (!name || !email || !password) {
-      throw new Error("Missing required fields");
-    }
-
-    const [result] = await pool.execute(
-      `INSERT INTO users (name, email, password, role)
-       VALUES (?, ?, ?, ?)`,
-      [
-        name,
-        email,
-        password,
-        role || 'participant' // ✅ main fix
-      ]
-    );
-
-    return this.findById(result.insertId);
-  }
-
-  // ======================
-  // GET ALL PARTICIPANTS
-  // ======================
-  static async findAllParticipants() {
-    const pool = getPool();
-
-    const [rows] = await pool.execute(
-      `SELECT id, name, email, created_at 
-       FROM users 
-       WHERE role = 'participant'`
-    );
-
-    return rows;
-  }
-}
-
-module.exports = User;
+module.exports = mongoose.model('User', userSchema);

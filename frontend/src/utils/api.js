@@ -1,168 +1,97 @@
 import axios from "axios";
 
-// Prefer VITE_API_BASE_URL. Keep VITE_API_URL as a backward-compatible fallback.
-const rawApiBase =
-  import.meta.env.VITE_API_BASE_URL ||
-  import.meta.env.VITE_API_URL ||
-  (import.meta.env.DEV
-    ? "http://localhost:8000/api"
-    : "https://hackathonhub.up.railway.app/api");
-
+const rawApiBase = `${import.meta.env.VITE_API_URL || "http://localhost:8000"}/api`;
 export const API_BASE_URL = rawApiBase.replace(/\/$/, "");
 
 export const apiClient = axios.create({
   baseURL: API_BASE_URL,
-  headers: {
-    "Content-Type": "application/json",
-  },
+  headers: { "Content-Type": "application/json" },
 });
+
+const emitApiEvent = (name, detail = null) => {
+  if (typeof window !== "undefined") {
+    window.dispatchEvent(new CustomEvent(name, { detail }));
+  }
+};
 
 apiClient.interceptors.request.use((config) => {
   const token = localStorage.getItem("token");
-  if (token) {
-    config.headers.Authorization = `Bearer ${token}`;
-  }
+  if (token) config.headers.Authorization = `Bearer ${token}`;
+  emitApiEvent("api_request_start");
   return config;
+}, (error) => {
+  emitApiEvent("api_request_end");
+  return Promise.reject(error);
 });
-
-if (typeof window !== "undefined") {
-  console.log("[API] Base URL:", API_BASE_URL);
-}
-
-// ======================
-// Helper: Get token
-// ======================
-const getToken = () => localStorage.getItem("token");
-
-export const apiUrl = (path) =>
-  `${API_BASE_URL}${path.startsWith("/") ? path : `/${path}`}`;
-
-const emitApiEvent = (name) => {
-  if (typeof window !== "undefined") {
-    window.dispatchEvent(new Event(name));
-  }
-};
 
 let isDisconnected = false;
 
-const parseError = async (res, fallbackMessage) => {
-  const contentType = res.headers.get("content-type") || "";
-  let payload = {};
-
-  if (contentType.includes("application/json")) {
-    payload = await res.json().catch(() => ({}));
-  } else {
-    const text = await res.text().catch(() => "");
-    payload = text ? { message: text } : {};
-  }
-
-  const message = payload?.message || fallbackMessage;
-  const error = new Error(message);
-  error.name = "ApiError";
-  error.status = res.status;
-  error.code = payload?.code;
-  throw error;
-};
-
-const isNetworkError = (error) => {
-  // Browsers throw TypeError('Failed to fetch') for network/CORS/DNS failures.
-  if (error?.name === "TypeError") return true;
-  if (typeof error?.message === "string") {
-    const m = error.message.toLowerCase();
-    return m.includes("failed to fetch") || m.includes("networkerror");
-  }
-  return false;
-};
-
-const request = async (
-  url,
-  options = {},
-  fallbackMessage = "API request failed"
-) => {
-  emitApiEvent("api_request_start");
-
-  try {
-    const token = getToken();
-    const headers = {
-      "Content-Type": "application/json",
-      ...(token ? { Authorization: `Bearer ${token}` } : {}),
-      ...(options.headers || {}),
-    };
-
-    const requestUrl = apiUrl(url);
-    console.log("[API] Request URL:", requestUrl);
-
-    const res = await fetch(requestUrl, {
-      ...options,
-      headers,
-    });
-
-    if (!res.ok) {
-      await parseError(res, fallbackMessage);
-    }
-
+apiClient.interceptors.response.use(
+  (response) => {
     if (isDisconnected) {
       isDisconnected = false;
       emitApiEvent("api_reconnected");
     }
-
-    if (res.status === 204) return {};
-    return res.json();
-  } catch (error) {
-    if (isNetworkError(error) && !isDisconnected) {
+    emitApiEvent("api_request_end");
+    return response.data; // Return inner data automatically
+  },
+  (error) => {
+    emitApiEvent("api_request_end");
+    
+    // Check network errors
+    if (!error.response && !isDisconnected) {
       isDisconnected = true;
       emitApiEvent("api_disconnected");
     }
-    throw error;
-  } finally {
-    emitApiEvent("api_request_end");
+
+    // 401 Unauthorized handling
+    if (error.response?.status === 401) {
+      emitApiEvent("auth_expired");
+    }
+
+    const message = error.response?.data?.message || error.message || "API request failed";
+    const enhancedError = new Error(message);
+    enhancedError.status = error.response?.status;
+    enhancedError.code = error.response?.data?.code;
+    
+    // Optionally alert global toaster
+    emitApiEvent("toast_error", message);
+
+    return Promise.reject(enhancedError);
   }
-};
+);
 
-// ======================
-// GET
-// ======================
-export const apiGet = async (url) => {
-  return request(url, {}, "API GET failed");
-};
+// === Request Deduplication Cache ===
+const pendingRequests = new Map();
 
-// ======================
-// POST
-// ======================
-export const apiPost = async (url, body) => {
-  return request(
+const request = async (method, url, data = null, options = {}) => {
+  // Create a unique key for deduplication (only GETs usually)
+  const reqKey = method === 'GET' ? `${method}:${url}` : null;
+
+  if (reqKey && pendingRequests.has(reqKey)) {
+    return pendingRequests.get(reqKey);
+  }
+
+  const promise = apiClient({
+    method,
     url,
-    {
-      method: "POST",
-      body: JSON.stringify(body),
-    },
-    "API POST failed"
-  );
+    data,
+    ...options
+  }).finally(() => {
+    if (reqKey) pendingRequests.delete(reqKey);
+  });
+
+  if (reqKey) {
+    pendingRequests.set(reqKey, promise);
+  }
+
+  return promise;
 };
 
 // ======================
-// PUT
+// VERBS
 // ======================
-export const apiPut = async (url, body) => {
-  return request(
-    url,
-    {
-      method: "PUT",
-      body: JSON.stringify(body),
-    },
-    "API PUT failed"
-  );
-};
-
-// ======================
-// DELETE
-// ======================
-export const apiDelete = async (url) => {
-  return request(
-    url,
-    {
-      method: "DELETE",
-    },
-    "API DELETE failed"
-  );
-};
+export const apiGet = (url) => request("GET", url);
+export const apiPost = (url, body) => request("POST", url, body);
+export const apiPut = (url, body) => request("PUT", url, body);
+export const apiDelete = (url) => request("DELETE", url);

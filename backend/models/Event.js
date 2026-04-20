@@ -1,95 +1,100 @@
-const { getPool } = require('../config/db');
+const mongoose = require('mongoose');
 
-class Event {
-  static async create({ name, description, start_date, end_date, created_by }) {
-    const pool = getPool();
+const eventSchema = new mongoose.Schema({
+  title: { type: String, required: true },
+  description: { type: String, default: '' },
+  start_date: { type: Date, required: true },
+  end_date: { type: Date, required: true },
+  created_by: { type: mongoose.Schema.Types.ObjectId, ref: 'User' },
+  judges: [{
+    judge_id: { type: mongoose.Schema.Types.ObjectId, ref: 'User' },
+    assigned_at: { type: Date, default: Date.now }
+  }]
+}, { timestamps: { createdAt: 'created_at', updatedAt: false } });
 
-    const [result] = await pool.execute(
-      'INSERT INTO events (title, description, start_date, end_date, created_by) VALUES (?, ?, ?, ?, ?)',
-      [name, description || '', start_date, end_date, created_by || null]
-    );
+eventSchema.statics.create = async function({ name, description, start_date, end_date, created_by }) {
+  const event = new this({
+    title: name,
+    description: description || '',
+    start_date,
+    end_date,
+    created_by: created_by || null
+  });
+  await event.save();
+  return this.findById(event._id);
+};
 
-    return this.findById(result.insertId);
-  }
+eventSchema.statics.findAll = async function() {
+  const events = await this.find().populate('created_by', 'name').sort({ start_date: -1 }).lean();
+  
+  const Team = mongoose.model('Team');
+  const Submission = mongoose.model('Submission');
 
-  static async findAll() {
-    const pool = getPool();
+  return Promise.all(events.map(async (e) => {
+    const team_count = await Team.countDocuments({ event_id: e._id });
+    const submission_count = await Submission.countDocuments({ event_id: e._id });
+    return {
+      id: e._id.toHexString(),
+      name: e.title,
+      description: e.description,
+      start_date: e.start_date,
+      end_date: e.end_date,
+      created_by: e.created_by?._id,
+      created_by_name: e.created_by?.name,
+      team_count,
+      submission_count
+    };
+  }));
+};
 
-    const [rows] = await pool.execute(`
-      SELECT 
-        e.id,
-        e.title AS name,
-        e.description,
-        e.start_date,
-        e.end_date,
-        e.created_by,
-        u.name AS created_by_name,
+eventSchema.statics.findById = async function(id) {
+  const e = await this.findOne({ _id: id }).populate('created_by', 'name').lean();
+  if (!e) return null;
 
-        (SELECT COUNT(*) FROM teams t WHERE t.event_id = e.id) AS team_count,
-        (SELECT COUNT(*) FROM submissions s WHERE s.event_id = e.id) AS submission_count
+  const Team = mongoose.model('Team');
+  const Submission = mongoose.model('Submission');
 
-      FROM events e
-      LEFT JOIN users u ON e.created_by = u.id
-      ORDER BY e.start_date DESC
-    `);
+  const team_count = await Team.countDocuments({ event_id: e._id });
+  const submission_count = await Submission.countDocuments({ event_id: e._id });
 
-    return rows;
-  }
+  return {
+    id: e._id.toHexString(),
+    name: e.title,
+    description: e.description,
+    start_date: e.start_date,
+    end_date: e.end_date,
+    created_by: e.created_by?._id,
+    created_by_name: e.created_by?.name,
+    team_count,
+    submission_count
+  };
+};
 
-  static async findById(id) {
-    const pool = getPool();
+eventSchema.statics.assignJudge = async function(judge_id, event_id) {
+  await this.updateOne(
+    { _id: event_id },
+    { $addToSet: { judges: { judge_id } } }
+  );
+};
 
-    const [rows] = await pool.execute(`
-      SELECT 
-        e.id,
-        e.title AS name,
-        e.description,
-        e.start_date,
-        e.end_date,
-        e.created_by,
-        u.name AS created_by_name,
-        (SELECT COUNT(*) FROM teams t WHERE t.event_id = e.id) AS team_count,
-        (SELECT COUNT(*) FROM submissions s WHERE s.event_id = e.id) AS submission_count
+eventSchema.statics.isJudgeAssigned = async function(judge_id, event_id) {
+  const event = await this.findOne({ _id: event_id, "judges.judge_id": judge_id });
+  return !!event;
+};
 
-      FROM events e
-      LEFT JOIN users u ON e.created_by = u.id
-      WHERE e.id = ?
-    `, [id]);
+eventSchema.statics.getJudges = async function(event_id) {
+  const event = await this.findOne({ _id: event_id }).populate('judges.judge_id', 'name email');
+  if (!event || !event.judges) return [];
+  
+  return event.judges.map(j => ({
+    id: j.judge_id?._id,
+    name: j.judge_id?.name,
+    email: j.judge_id?.email,
+    assigned_at: j.assigned_at
+  }));
+};
 
-    return rows[0];
-  }
+eventSchema.virtual('id').get(function() { return this._id.toHexString(); });
+eventSchema.set('toJSON', { virtuals: true });
 
-  static async assignJudge(judge_id, event_id) {
-    const pool = getPool();
-    await pool.execute(
-      'INSERT INTO judge_assignments (judge_id, event_id) VALUES (?, ?)',
-      [judge_id, event_id]
-    );
-  }
-
-  static async isJudgeAssigned(judge_id, event_id) {
-    const pool = getPool();
-
-    const [rows] = await pool.execute(
-      'SELECT id FROM judge_assignments WHERE judge_id = ? AND event_id = ?',
-      [judge_id, event_id]
-    );
-
-    return rows.length > 0;
-  }
-
-  static async getJudges(event_id) {
-    const pool = getPool();
-
-    const [rows] = await pool.execute(`
-      SELECT u.id, u.name, u.email, ja.assigned_at
-      FROM judge_assignments ja
-      JOIN users u ON ja.judge_id = u.id
-      WHERE ja.event_id = ?
-    `, [event_id]);
-
-    return rows;
-  }
-}
-
-module.exports = Event;
+module.exports = mongoose.model('Event', eventSchema);

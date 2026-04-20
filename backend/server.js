@@ -1,21 +1,33 @@
 const express = require("express");
 const cors = require("cors");
-require("dotenv").config();
+const helmet = require("helmet");
+const rateLimit = require("express-rate-limit");
+require("dotenv").config({ path: __dirname + "/.env" });
 
-const {
-  connectDB,
-  getDbStatus,
-  startDbReconnectLoop
-} = require("./config/db");
+const { connectMongo } = require("./config/mongo");
 
 const app = express();
 
 // ======================
 // Middleware
 // ======================
+app.use(helmet());
+
+const apiLimiter = rateLimit({
+  windowMs: 15 * 60 * 1000,
+  max: 100,
+  standardHeaders: true,
+  legacyHeaders: false,
+  message: { success: false, message: "Too many requests, please try again later." }
+});
+
+app.use("/api/", apiLimiter);
+
 app.use(cors({
-  origin: "*"
+  origin: process.env.FRONTEND_URL || "http://localhost:5173",
+  credentials: true
 }));
+
 app.use(express.json());
 
 // ======================
@@ -26,21 +38,12 @@ app.get("/api/health", (req, res) => {
 });
 
 // ======================
-// DB Check Middleware
+// API Logging Middleware
 // ======================
 app.use("/api", (req, res, next) => {
-  console.log(`[API] ${req.method} ${req.originalUrl}`);
-
+  console.log(`[API Hit] ${req.method} ${req.originalUrl}`);
   if (req.path === "/health") return next();
-
-  const db = getDbStatus();
-  if (db.isConnected) return next();
-
-  return res.status(503).json({
-    success: false,
-    code: "DB_UNAVAILABLE",
-    message: "Database is currently unavailable. Please try again shortly."
-  });
+  return next();
 });
 
 // ======================
@@ -58,11 +61,31 @@ app.use("/api/stats", require("./routes/statsRoutes"));
 // Global Error Handler
 // ======================
 app.use((err, req, res, next) => {
-  console.error("❌ Server Error:", err.message);
+  // Catch Mongoose Schema validation errors correctly
+  if (err.name === 'ValidationError') {
+    const messages = Object.values(err.errors).map(val => val.message);
+    return res.status(400).json({
+      success: false,
+      message: messages[0] || 'Validation Error',
+      errors: messages
+    });
+  }
 
-  res.status(500).json({
+  // Catch Mongoose invalid ObjectIDs
+  if (err.name === 'CastError') {
+    return res.status(400).json({
+      success: false,
+      message: 'Invalid resource ID'
+    });
+  }
+
+  console.error("❌ Unhandled Runtime Error:", err.message);
+
+  res.status(err.status || 500).json({
     success: false,
-    message: err.message || "Internal Server Error"
+    message: process.env.NODE_ENV === 'production' 
+      ? "Internal Server Error" 
+      : (err.message || "Internal Server Error")
   });
 });
 
@@ -70,21 +93,20 @@ app.use((err, req, res, next) => {
 // Start Server
 // ======================
 const startServer = async () => {
+  const PORT = process.env.PORT || 8000;
+
+  // 1. ALWAYS START SERVER
+  app.listen(PORT, () => {
+    console.log(`🚀 Server running on port ${PORT}`);
+    console.log(`🩺 Health: http://localhost:${PORT}/api/health`);
+  });
+
+  // 2. ATTEMPT MONGO CONNECTION AFTER SERVER STARTS
+  // Server will NOT crash if this fails
   try {
-    await connectDB(); // ✅ correct use of await
-
-    startDbReconnectLoop();
-
-    const PORT = process.env.PORT || 8000;
-
-    app.listen(PORT, () => {
-      console.log(`🚀 Server running on port ${PORT}`);
-      console.log(`🩺 Health: http://localhost:${PORT}/api/health`);
-    });
-
+    await connectMongo(); 
   } catch (err) {
-    console.error("❌ Failed to start server:", err.message);
-    process.exit(1);
+    console.error("❌ Mongo startup failed implicitly:", err.message);
   }
 };
 

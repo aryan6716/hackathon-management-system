@@ -2,7 +2,6 @@
 
 const Submission = require('../models/Submission');
 const Team = require('../models/Team');
-const { getPool } = require('../config/db');
 const asyncHandler = require('../middleware/asyncHandler');
 
 // ======================
@@ -20,15 +19,7 @@ const submitProject = asyncHandler(async (req, res) => {
     });
   }
 
-  // ✅ DB check
-  try {
-    getPool();
-  } catch {
-    return res.status(503).json({
-      success: false,
-      message: 'Database unavailable'
-    });
-  }
+  // DB check handled by Mongoose
 
   const githubRegex = /^(https?:\/\/)?(www\.)?github\.com\/.+/;
   if (!githubRegex.test(github_link)) {
@@ -115,14 +106,6 @@ const updateProject = asyncHandler(async (req, res) => {
 // GET ALL PROJECTS
 // ======================
 const getAllProjects = asyncHandler(async (req, res) => {
-  try {
-    getPool();
-  } catch {
-    return res.status(503).json({
-      success: false,
-      message: 'Database unavailable'
-    });
-  }
 
   const submissions = await Submission.findAll(
     req.user.role,

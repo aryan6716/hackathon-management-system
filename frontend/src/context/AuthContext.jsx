@@ -1,4 +1,4 @@
-import React, { createContext, useContext, useEffect, useState } from "react"
+import React, { createContext, useContext, useEffect, useState, useCallback } from "react"
 import { apiGet } from "../utils/api"
 
 const AuthContext = createContext()
@@ -54,27 +54,39 @@ export const AuthProvider = ({ children }) => {
 
     initAuth()
 
-    return () => { isMounted = false }
+    const handleAuthExpired = () => {
+      localStorage.removeItem("token")
+      localStorage.removeItem("user")
+      if (isMounted) setUser(null)
+    }
+
+    window.addEventListener("auth_expired", handleAuthExpired)
+
+    return () => { 
+      isMounted = false
+      window.removeEventListener("auth_expired", handleAuthExpired)
+    }
   }, [])
 
-  const login = (token, userData) => {
+  const login = useCallback((token, userData) => {
     localStorage.setItem("token", token)
     localStorage.setItem("user", JSON.stringify(userData))
     setUser(userData)
-  }
+  }, [])
 
-  const logout = () => {
+  const logout = useCallback(() => {
     localStorage.removeItem("token")
     localStorage.removeItem("user")
     setUser(null)
-  }
+  }, [])
 
-  const updateUser = (newUserData) => {
-    const updated = { ...user, ...newUserData }
-    setUser(updated)
-    localStorage.setItem("user", JSON.stringify(updated))
-    return updated
-  }
+  const updateUser = useCallback((newUserData) => {
+    setUser((prev) => {
+      const updated = { ...prev, ...newUserData }
+      localStorage.setItem("user", JSON.stringify(updated))
+      return updated
+    })
+  }, [])
 
   return (
     <AuthContext.Provider value={{ user, loading, login, logout, updateUser }}>

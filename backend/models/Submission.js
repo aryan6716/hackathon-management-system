@@ -1,257 +1,132 @@
-// backend/models/Submission.js
+const mongoose = require('mongoose');
 
-const { getPool } = require('../config/db');
+const submissionSchema = new mongoose.Schema({
+  title: { type: String, required: true },
+  description: { type: String, required: true },
+  github_link: { type: String, required: true },
+  team_id: { type: mongoose.Schema.Types.ObjectId, ref: 'Team' },
+  event_id: { type: mongoose.Schema.Types.ObjectId, ref: 'Event' },
+}, { timestamps: { createdAt: 'submitted_at', updatedAt: false } });
 
-class Submission {
-
-  // ======================
-  // Create submission
-  // ======================
-  static async submit({ team_id, event_id, title, description, github_link }) {
-    const pool = getPool();
-    try {
-      const [result] = await pool.execute(
-        `INSERT INTO submissions (team_id, event_id, title, description, github_link) 
-         VALUES (?, ?, ?, ?, ?)`,
-        [team_id, event_id || null, title, description, github_link]
-      );
-
-      return this.findById(result.insertId);
-
-    } catch (error) {
-      console.error('❌ submit error:', error);
-      throw new Error('Failed to create submission');
-    }
+// Helper to calculate scores
+async function attachScoresToSubmission(sub, Score) {
+  const scores = await Score.find({ submission_id: sub._id }).lean();
+  let avg_score = 0;
+  if (scores.length > 0) {
+    avg_score = scores.reduce((a, b) => a + b.score, 0) / scores.length;
   }
-
-
-  // ======================
-  // Update submission
-  // ======================
-  static async update(id, updates, values) {
-    const pool = getPool();
-    try {
-      if (!updates.length) throw new Error('No fields to update');
-
-      await pool.execute(
-        `UPDATE submissions SET ${updates.join(', ')} WHERE id = ?`,
-        values
-      );
-
-      return this.findById(id);
-
-    } catch (error) {
-      console.error('❌ update error:', error);
-      throw new Error('Failed to update submission');
-    }
-  }
-
-
-  // ======================
-  // Get single submission
-  // ======================
-  static async findById(id) {
-    const pool = getPool();
-    try {
-      const [rows] = await pool.execute(`
-        SELECT 
-          s.id,
-          s.title,
-          s.description,
-          s.github_link,
-          s.submitted_at,
-          s.team_id,
-          s.event_id,
-          t.name AS team_name,
-          e.title AS event_name,
-          COALESCE(AVG(sc.score), 0) AS avg_score,
-          COUNT(sc.id) AS score_count
-
-        FROM submissions s
-        JOIN teams t ON s.team_id = t.id
-        LEFT JOIN events e ON s.event_id = e.id
-        LEFT JOIN scores sc ON sc.submission_id = s.id
-
-        WHERE s.id = ?
-        GROUP BY s.id, s.submitted_at, t.name, e.title
-      `, [id]);
-
-      return rows[0] || null;
-
-    } catch (error) {
-      console.error('❌ findById error:', error);
-      return null;
-    }
-  }
-
-
-  // ======================
-  // Find by team
-  // ======================
-  static async findByTeam(team_id) {
-    const pool = getPool();
-    try {
-      const [rows] = await pool.execute(
-        `SELECT id FROM submissions WHERE team_id = ?`,
-        [team_id]
-      );
-
-      return rows[0] || null;
-
-    } catch (error) {
-      console.error('❌ findByTeam error:', error);
-      return null;
-    }
-  }
-
-
-  // ======================
-  // Verify access
-  // ======================
-  static async verifyTeamAccess(submission_id, user_id) {
-    const pool = getPool();
-    try {
-      const [rows] = await pool.execute(`
-        SELECT s.id 
-        FROM submissions s
-        JOIN teams t ON s.team_id = t.id
-        JOIN team_members tm ON tm.team_id = t.id
-        WHERE s.id = ? AND tm.user_id = ?
-      `, [submission_id, user_id]);
-
-      return rows[0] || null;
-
-    } catch (error) {
-      console.error('❌ verifyTeamAccess error:', error);
-      return null;
-    }
-  }
-
-
-  // ======================
-  // Get all submissions
-  // ======================
-  static async findAll(role, user_id, limit = 50, offset = 0) {
-    const pool = getPool();
-    if (!user_id && role !== 'admin') {
-      throw new Error("Unauthorized: user_id is undefined");
-    }
-
-    try {
-      let query = '';
-      let params = [];
-
-      // ======================
-      // ADMIN
-      // ======================
-      if (role === 'admin') {
-        query = `
-          SELECT 
-            s.id,
-            s.title,
-            s.submitted_at,
-            s.team_id,
-            t.name AS team_name,
-            e.title AS event_name,
-            COALESCE(AVG(sc.score), 0) AS avg_score,
-            COUNT(DISTINCT sc.id) AS score_count
-
-          FROM submissions s
-          JOIN teams t ON s.team_id = t.id
-          LEFT JOIN events e ON s.event_id = e.id
-          LEFT JOIN scores sc ON sc.submission_id = s.id
-
-          GROUP BY s.id, s.submitted_at, t.name, e.title
-          ORDER BY s.id DESC
-          LIMIT ? OFFSET ?
-        `;
-
-        params = [Number(limit), Number(offset)];
-      }
-
-      // ======================
-      // JUDGE
-      // ======================
-      else if (role === 'judge') {
-        query = `
-          SELECT 
-            s.id,
-            s.title,
-            s.submitted_at,
-            t.name AS team_name,
-            e.title AS event_name,
-            COALESCE(AVG(sc.score), 0) AS avg_score,
-            COUNT(DISTINCT sc.id) AS score_count,
-
-            (
-              SELECT score 
-              FROM scores 
-              WHERE submission_id = s.id AND judge_id = ?
-            ) AS my_score
-
-          FROM submissions s
-          JOIN teams t ON s.team_id = t.id
-          LEFT JOIN events e ON s.event_id = e.id
-          LEFT JOIN scores sc ON sc.submission_id = s.id
-
-          WHERE s.event_id IN (
-            SELECT event_id FROM judge_assignments WHERE judge_id = ?
-          )
-
-          GROUP BY s.id, s.submitted_at, t.name, e.title
-          ORDER BY s.id DESC
-          LIMIT ? OFFSET ?
-        `;
-
-        params = [user_id, user_id, Number(limit), Number(offset)];
-      }
-
-      // ======================
-      // PARTICIPANT
-      // ======================
-      else {
-        // if no user id → return empty
-        if (!user_id) return [];
-
-        query = `
-          SELECT 
-            s.id,
-            s.title,
-            s.submitted_at,
-            t.name AS team_name,
-            e.title AS event_name,
-            COALESCE(AVG(sc.score), 0) AS avg_score,
-            COUNT(DISTINCT sc.id) AS score_count
-
-          FROM submissions s
-          JOIN teams t ON s.team_id = t.id
-          LEFT JOIN events e ON s.event_id = e.id
-          LEFT JOIN scores sc ON sc.submission_id = s.id
-
-          WHERE t.id IN (
-            SELECT team_id FROM team_members WHERE user_id = ?
-          )
-
-          GROUP BY s.id, s.submitted_at, t.name, e.title
-          ORDER BY s.id DESC
-          LIMIT ? OFFSET ?
-        `;
-
-        params = [
-          user_id,
-          Number(limit),
-          Number(offset)
-        ];
-      }
-
-      const [rows] = await pool.execute(query, params);
-      return rows;
-
-    } catch (error) {
-      console.error('❌ findAll error:', error);
-      throw error;
-    }
-  }
+  return {
+    ...sub,
+    id: sub._id.toHexString(),
+    avg_score: Number(avg_score.toFixed(1)),
+    score_count: scores.length
+  };
 }
 
-module.exports = Submission;
+submissionSchema.statics.submit = async function({ team_id, event_id, title, description, github_link }) {
+  const sub = new this({
+    team_id,
+    event_id: event_id || null,
+    title,
+    description,
+    github_link
+  });
+  await sub.save();
+  return this.findById(sub._id);
+};
+
+submissionSchema.statics.update = async function(id, updates, values) {
+  // Translate SQL-like updates array ("title = ?", "description = ?")
+  const updateObj = {};
+  updates.forEach((updateStr, index) => {
+    const field = updateStr.split(' =')[0].trim();
+    updateObj[field] = values[index];
+  });
+  
+  await this.updateOne({ _id: id }, { $set: updateObj });
+  return this.findById(id);
+};
+
+submissionSchema.statics.findById = async function(id) {
+  const sub = await this.findOne({ _id: id })
+    .populate('team_id', 'name')
+    .populate('event_id', 'title')
+    .lean();
+    
+  if (!sub) return null;
+
+  const Score = mongoose.model('Score');
+  const res = await attachScoresToSubmission(sub, Score);
+  
+  res.team_name = sub.team_id?.name;
+  res.event_name = sub.event_id?.title;
+  return res;
+};
+
+submissionSchema.statics.findByTeam = async function(team_id) {
+  const sub = await this.findOne({ team_id }).lean();
+  if (!sub) return null;
+  return { id: sub._id.toHexString() };
+};
+
+submissionSchema.statics.verifyTeamAccess = async function(submission_id, user_id) {
+  const sub = await this.findOne({ _id: submission_id }).lean();
+  if (!sub) return null;
+  
+  const Team = mongoose.model('Team');
+  const team = await Team.findOne({ _id: sub.team_id, "members.user_id": user_id }).lean();
+  
+  return team ? { id: sub._id.toHexString() } : null;
+};
+
+submissionSchema.statics.findAll = async function(role, user_id, limit = 50, offset = 0) {
+  if (!user_id && role !== 'admin') {
+    throw new Error("Unauthorized: user_id is undefined");
+  }
+
+  const Score = mongoose.model('Score');
+  const Team = mongoose.model('Team');
+  const Event = mongoose.model('Event');
+  
+  let matchQuery = {};
+
+  if (role === 'judge') {
+    // Find events where judge is assigned
+    const judgeEvents = await Event.find({ "judges.judge_id": user_id }).select('_id').lean();
+    const eventIds = judgeEvents.map(e => e._id);
+    matchQuery = { event_id: { $in: eventIds } };
+  } else if (role === 'participant') {
+    if (!user_id) return [];
+    // Find teams where user is a member
+    const userTeams = await Team.find({ "members.user_id": user_id }).select('_id').lean();
+    const teamIds = userTeams.map(t => t._id);
+    matchQuery = { team_id: { $in: teamIds } };
+  }
+
+  const submissions = await this.find(matchQuery)
+    .populate('team_id', 'name')
+    .populate('event_id', 'title')
+    .sort({ submitted_at: -1 })
+    .skip(Number(offset))
+    .limit(Number(limit))
+    .lean();
+
+  const results = await Promise.all(submissions.map(async (sub) => {
+    const s = await attachScoresToSubmission(sub, Score);
+    s.team_name = sub.team_id?.name;
+    s.event_name = sub.event_id?.title;
+
+    if (role === 'judge') {
+      const myScore = await Score.findOne({ submission_id: sub._id, judge_id: user_id }).lean();
+      s.my_score = myScore ? myScore.score : null;
+    }
+    return s;
+  }));
+
+  return results;
+};
+
+submissionSchema.virtual('id').get(function() { return this._id.toHexString(); });
+submissionSchema.set('toJSON', { virtuals: true });
+
+module.exports = mongoose.model('Submission', submissionSchema);
