@@ -1,33 +1,16 @@
-/* ── Premium SaaS Design System ─────────────────────────────────── */
-@import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=Outfit:wght@500;600;700;800&display=swap');
+/* ── Simplified Design System ─────────────────────────────────── */
+@import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600&display=swap');
 
 :root {
-  /* Brand Gradients */
-  --grad-indigo: linear-gradient(135deg, #6366f1 0%, #4f46e5 100%);
-  --grad-purple: linear-gradient(135deg, #a855f7 0%, #8b5cf6 100%);
-  --grad-blue: linear-gradient(135deg, #3b82f6 0%, #2563eb 100%);
-  --grad-glow: radial-gradient(circle at center, rgba(99, 102, 241, 0.15) 0%, transparent 70%);
-  
-  /* Modern Dark Palette */
-  --bg-primary: #030712;
-  --bg-secondary: #0b0f1a;
-  --bg-tertiary: #111827;
-  
-  --card-bg: rgba(255, 255, 255, 0.03);
-  --card-border: rgba(255, 255, 255, 0.08);
-  --card-hover-border: rgba(99, 102, 241, 0.3);
+  --bg-primary: #111827; /* Tailwind gray-900 */
+  --bg-secondary: #1f2937; /* Tailwind gray-800 */
+  --bg-tertiary: #374151; /* Tailwind gray-700 */
   
   --text-primary: #f9fafb;
-  --text-secondary: #9ca3af;
-  --text-muted: #6b7280;
+  --text-secondary: #d1d5db;
+  --text-muted: #9ca3af;
   
-  --brand-primary: #6366f1;
-  --brand-secondary: #a855f7;
-  --brand-accent: #3b82f6;
-
-  /* Theme Overrides (if needed) */
-  --sidebar-bg: #030712;
-  --border-muted: rgba(255, 255, 255, 0.05);
+  --brand-primary: #4f46e5; /* Tailwind indigo-600 */
 }
 
 @tailwind base;
@@ -36,7 +19,6 @@
 
 @layer base {
   * {
-    @apply border-white/5;
     box-sizing: border-box;
   }
 
@@ -45,115 +27,39 @@
     height: 100%;
     margin: 0;
     padding: 0;
-    overflow-x: hidden;
-  }
-
-  html {
-    scroll-behavior: smooth;
   }
 
   body {
-    @apply bg-slate-950 text-slate-50 antialiased selection:bg-indigo-500/30;
+    @apply bg-gray-900 text-gray-50;
     font-family: 'Inter', sans-serif;
     background-color: var(--bg-primary);
   }
 
-  h1, h2, h3, h4, h5, h6 {
-    font-family: 'Outfit', sans-serif;
-  }
-
   /* Custom Scrollbar */
   ::-webkit-scrollbar {
-    width: 6px;
+    width: 8px;
   }
   ::-webkit-scrollbar-track {
     background: transparent;
   }
   ::-webkit-scrollbar-thumb {
-    background: rgba(255, 255, 255, 0.1);
-    border-radius: 10px;
+    @apply bg-gray-700 rounded-md;
   }
   ::-webkit-scrollbar-thumb:hover {
-    background: rgba(255, 255, 255, 0.2);
+    @apply bg-gray-600;
   }
 }
 
 @layer components {
-  .glass-panel {
-    @apply bg-white/[0.03] backdrop-blur-xl border border-white/[0.08] shadow-2xl;
+  /* Simplified Input defaults fallback */
+  .input-standard {
+    @apply w-full bg-gray-800 border border-gray-700 rounded-md px-4 py-2 text-sm text-gray-200
+           placeholder:text-gray-500 outline-none transition-colors duration-200
+           focus:border-indigo-500 focus:ring-1 focus:ring-indigo-500;
   }
 
-  .glass-card {
-    @apply relative overflow-hidden bg-white/[0.02] backdrop-blur-md border border-white/[0.08] 
-           rounded-2xl transition-all duration-300;
-  }
-
-  .glass-card:hover {
-    @apply border-indigo-500/30 bg-white/[0.04] shadow-indigo-500/10 shadow-2xl;
-  }
-
-  .input-premium {
-    @apply w-full bg-white/[0.03] border border-white/[0.08] rounded-xl px-4 py-3 text-sm text-slate-200
-           placeholder:text-slate-500 outline-none transition-all duration-200
-           focus:border-indigo-500/50 focus:ring-4 focus:ring-indigo-500/10 focus:bg-white/[0.05];
-  }
-
-  .btn-premium {
-    @apply relative inline-flex items-center justify-center gap-2 px-6 py-2.5 rounded-xl font-semibold text-sm
-           transition-all duration-300 disabled:opacity-50 disabled:cursor-not-allowed
-           active:scale-[0.98] overflow-hidden;
-  }
-
-  .btn-premium-primary {
-    @apply btn-premium bg-gradient-to-r from-indigo-600 to-violet-600 text-white shadow-lg shadow-indigo-500/20
-           hover:shadow-indigo-500/40 hover:brightness-110;
-  }
-
-  .btn-premium-secondary {
-    @apply btn-premium bg-white/5 border border-white/10 text-slate-200 hover:bg-white/10 hover:border-white/20;
-  }
-
-  .text-gradient {
-    @apply bg-gradient-to-r from-indigo-400 via-purple-400 to-blue-400 bg-clip-text text-transparent;
-  }
-
+  /* Base Shimmer for skeleton, flat version */
   .shimmer {
-    @apply relative overflow-hidden before:absolute before:inset-0 before:-translate-x-full 
-           before:animate-[shimmer_2s_infinite] before:bg-gradient-to-r 
-           before:from-transparent before:via-white/5 before:to-transparent;
+    @apply bg-gray-800 animate-pulse;
   }
-}
-
-@keyframes shimmer {
-  100% {
-    transform: translateX(100%);
-  }
-}
-
-@keyframes float {
-  0%, 100% { transform: translateY(0) scale(1); }
-  50% { transform: translateY(-20px) scale(1.05); }
-}
-
-@keyframes pulse-glow {
-  0%, 100% { opacity: 0.5; filter: blur(40px); }
-  50% { opacity: 0.8; filter: blur(60px); }
-}
-
-.animate-float {
-  animation: float 6s ease-in-out infinite;
-}
-
-.noise-overlay {
-  position: fixed;
-  inset: 0;
-  z-index: 1;
-  opacity: 0.015;
-  pointer-events: none;
-  background-image: url("data:image/svg+xml,%3Csvg viewBox='0 0 200 200' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='noiseFilter'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.65' numOctaves='3' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23noiseFilter)'/%3E%3C/svg%3E");
-}
-
-.blob {
-  @apply absolute rounded-full mix-blend-screen filter blur-[80px] opacity-20 pointer-events-none;
-  animation: pulse-glow 10s ease-in-out infinite;
 }

@@ -4,26 +4,24 @@ import { motion, AnimatePresence } from 'framer-motion'
 
 // ── Button ──────────────────────────────────────────────────
 export function Button({ variant = 'primary', size = 'md', children, className, loading, icon: Icon, type = 'button', disabled, ...props }) {
-  const base = 'btn-premium'
+  const base = 'inline-flex items-center justify-center font-medium rounded-md transition-colors duration-200'
   const variants = {
-    primary: 'btn-premium-primary',
-    secondary: 'btn-premium-secondary',
-    ghost: 'text-slate-400 hover:text-white hover:bg-white/5 rounded-xl',
-    danger: 'bg-red-500/10 border border-red-500/20 text-red-400 hover:bg-red-500/20 rounded-xl',
-    success: 'bg-emerald-500/10 border border-emerald-500/20 text-emerald-400 hover:bg-emerald-500/20 rounded-xl',
+    primary: 'bg-indigo-600 text-white hover:bg-indigo-700',
+    secondary: 'bg-gray-800 text-gray-200 hover:bg-gray-700 border border-gray-700',
+    ghost: 'text-gray-400 hover:text-white hover:bg-gray-800',
+    danger: 'bg-red-600 text-white hover:bg-red-700',
+    success: 'bg-emerald-600 text-white hover:bg-emerald-700',
   }
   const sizes = {
-    sm: 'px-4 py-2 text-xs',
-    md: 'px-6 py-2.5 text-sm',
-    lg: 'px-8 py-3.5 text-base',
-    icon: 'p-2.5',
+    sm: 'px-3 py-1.5 text-sm',
+    md: 'px-4 py-2 text-sm',
+    lg: 'px-6 py-3 text-base',
+    icon: 'p-2',
   }
   
   return (
-    <motion.button
+    <button
       type={type}
-      whileHover={{ scale: 1.02, y: -1 }}
-      whileTap={{ scale: 0.96 }}
       className={clsx(base, variants[variant], sizes[size], className)}
       disabled={disabled || loading}
       aria-busy={loading || undefined}
@@ -36,52 +34,56 @@ export function Button({ variant = 'primary', size = 'md', children, className, 
         </svg>
       ) : (
         <>
-          {Icon && <Icon className="w-4 h-4" />}
+          {Icon && <Icon className="w-4 h-4 mr-2" />}
           {children}
         </>
       )}
-    </motion.button>
+    </button>
   )
 }
 
 // ── Card ──────────────────────────────────────────────────
 export function Card({ children, className, hover = false, ...props }) {
   return (
-    <motion.div
-      whileHover={hover ? { y: -4, border: '1px solid rgba(99, 102, 241, 0.3)' } : {}}
-      transition={{ duration: 0.2, ease: "easeOut" }}
-      className={clsx('glass-card p-6', className)}
+    <div
+      className={clsx(
+        'bg-gray-900 border border-gray-800 rounded-lg p-6',
+        hover && 'transition-colors duration-200 hover:border-gray-600',
+        className
+      )}
       {...props}
     >
       {children}
-    </motion.div>
+    </div>
   )
 }
 
 // ── StatCard ──────────────────────────────────────────────
 export function StatCard({ label, value, icon: Icon, delta, color = 'indigo', className }) {
   const colors = {
-    indigo: 'from-indigo-500/20 to-transparent text-indigo-400 border-indigo-500/20',
-    purple: 'from-purple-500/20 to-transparent text-purple-400 border-purple-500/20',
-    blue: 'from-blue-500/20 to-transparent text-blue-400 border-blue-500/20',
-    emerald: 'from-emerald-500/20 to-transparent text-emerald-400 border-emerald-500/20',
+    indigo: 'text-indigo-500 bg-indigo-500/10 border-indigo-500/20',
+    purple: 'text-purple-500 bg-purple-500/10 border-purple-500/20',
+    blue: 'text-blue-500 bg-blue-500/10 border-blue-500/20',
+    emerald: 'text-emerald-500 bg-emerald-500/10 border-emerald-500/20',
   }
   
   return (
-    <Card hover className={clsx('relative group overflow-hidden', className)}>
-      <div className="absolute top-0 right-0 p-3 opacity-10 group-hover:opacity-20 transition-opacity">
-        <Icon size={80} />
+    <Card hover className={clsx('relative', className)}>
+      <div className="absolute top-0 right-0 p-3 opacity-5">
+        <Icon size={64} />
       </div>
       
       <div className="relative z-10">
         <div className="flex items-center justify-between mb-4">
-          <div className={clsx('w-12 h-12 rounded-xl bg-gradient-to-br flex items-center justify-center border', colors[color])}>
-            <Icon size={22} />
+          <div className={clsx('w-10 h-10 rounded-md flex items-center justify-center border', colors[color])}>
+            <Icon size={18} />
           </div>
           {delta !== undefined && (
             <div className={clsx(
-              'flex items-center gap-1 text-xs font-bold px-2 py-1 rounded-lg',
-              (typeof delta === 'number' ? delta : parseFloat(delta)) >= 0 ? 'text-emerald-400 bg-emerald-500/10' : 'text-red-400 bg-red-500/10'
+              'flex items-center gap-1 text-xs font-medium px-2 py-1 rounded-md border',
+              (typeof delta === 'number' ? delta : parseFloat(delta)) >= 0 
+                ? 'text-emerald-500 bg-emerald-500/10 border-emerald-500/20' 
+                : 'text-red-500 bg-red-500/10 border-red-500/20'
             )}>
               {(typeof delta === 'number' ? delta : parseFloat(delta)) >= 0 ? '↑' : '↓'} {Math.abs(parseFloat(delta) || 0).toFixed(1)}%
             </div>
@@ -89,8 +91,8 @@ export function StatCard({ label, value, icon: Icon, delta, color = 'indigo', cl
         </div>
         
         <div className="space-y-1">
-          <h3 className="text-3xl font-bold tracking-tight text-white">{value}</h3>
-          <p className="text-sm font-medium text-slate-400 capitalize">{label}</p>
+          <h3 className="text-2xl font-semibold text-white">{value}</h3>
+          <p className="text-sm text-gray-400 capitalize">{label}</p>
         </div>
       </div>
     </Card>
@@ -100,18 +102,17 @@ export function StatCard({ label, value, icon: Icon, delta, color = 'indigo', cl
 // ── Badge ──────────────────────────────────────────────────
 export function Badge({ variant = 'default', children, className }) {
   const variants = {
-    active: 'bg-emerald-500/10 text-emerald-400 border border-emerald-500/20',
-    upcoming: 'bg-indigo-500/10 text-indigo-400 border border-indigo-500/20',
-    completed: 'bg-slate-500/10 text-slate-400 border border-slate-500/20',
-    featured: 'bg-amber-500/10 text-amber-400 border border-amber-500/20',
-    review: 'bg-purple-500/10 text-purple-400 border border-purple-500/20',
-    draft: 'bg-slate-600/10 text-slate-500 border border-slate-600/20',
-    scored: 'bg-blue-500/10 text-blue-400 border border-blue-500/20',
-    default: 'bg-white/5 text-slate-400 border border-white/10',
+    active: 'bg-emerald-100 text-emerald-800 border border-emerald-200',
+    upcoming: 'bg-indigo-100 text-indigo-800 border border-indigo-200',
+    completed: 'bg-gray-100 text-gray-800 border border-gray-200',
+    featured: 'bg-amber-100 text-amber-800 border border-amber-200',
+    review: 'bg-purple-100 text-purple-800 border border-purple-200',
+    draft: 'bg-gray-200 text-gray-600 border border-gray-300',
+    scored: 'bg-blue-100 text-blue-800 border border-blue-200',
+    default: 'bg-gray-100 text-gray-700 border border-gray-200',
   }
   return (
-    <span className={clsx('inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-[10px] font-bold uppercase tracking-wider', variants[variant], className)}>
-      {variant === 'active' && <span className="w-1.5 h-1.5 rounded-full bg-emerald-400 animate-pulse" />}
+    <span className={clsx('inline-flex items-center px-2.5 py-0.5 rounded text-xs font-medium', variants[variant], className)}>
       {children}
     </span>
   )
@@ -124,20 +125,21 @@ export function Input({ label, error, icon: Icon, className, ...props }) {
   const errorId = error ? `${inputId}-error` : undefined
 
   return (
-    <div className="space-y-1.5">
-      {label && <label htmlFor={inputId} className="block text-xs font-semibold text-slate-400 ml-1">{label}</label>}
-      <div className="relative group">
+    <div className="space-y-1">
+      {label && <label htmlFor={inputId} className="block text-sm font-medium text-gray-300">{label}</label>}
+      <div className="relative">
         {Icon && (
-          <div className="absolute left-4 top-1/2 -translate-y-1/2 text-slate-500 group-focus-within:text-indigo-400 transition-colors">
-            <Icon size={18} />
+          <div className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400">
+            <Icon size={16} />
           </div>
         )}
         <input
           id={inputId}
           className={clsx(
-            'input-premium',
-            Icon && 'pl-11',
-            error && 'border-red-500/50 focus:border-red-500 focus:ring-red-500/10 animate-shake',
+            'block w-full rounded-md border border-gray-700 bg-gray-800 text-white placeholder-gray-500',
+            'focus:border-indigo-500 focus:ring-1 focus:ring-indigo-500 outline-none transition-colors px-3 py-2 text-sm',
+            Icon && 'pl-9',
+            error && 'border-red-500 focus:border-red-500 focus:ring-red-500',
             className
           )}
           aria-invalid={!!error}
@@ -145,19 +147,11 @@ export function Input({ label, error, icon: Icon, className, ...props }) {
           {...props}
         />
       </div>
-      <AnimatePresence>
-        {error && (
-          <motion.p 
-            initial={{ opacity: 0, height: 0 }} 
-            animate={{ opacity: 1, height: 'auto' }} 
-            exit={{ opacity: 0, height: 0 }}
-            id={errorId}
-            className="text-[11px] font-medium text-red-400 ml-1"
-          >
-            {error}
-          </motion.p>
-        )}
-      </AnimatePresence>
+      {error && (
+        <p id={errorId} className="text-xs text-red-400 mt-1">
+          {error}
+        </p>
+      )}
     </div>
   )
 }
@@ -194,18 +188,16 @@ export function ProgressBar({ value, max = 100, color = 'indigo', className }) {
   const safeMax = Number(max) || 0;
   const pct = safeMax > 0 ? Math.min(100, (safeValue / safeMax) * 100) : 0;
   const colors = {
-    indigo: 'from-indigo-500 to-purple-500',
-    purple: 'from-purple-500 to-pink-500',
-    blue: 'from-blue-500 to-indigo-500',
-    emerald: 'from-emerald-500 to-teal-500',
+    indigo: 'bg-indigo-600',
+    purple: 'bg-purple-600',
+    blue: 'bg-blue-600',
+    emerald: 'bg-emerald-600',
   }
   return (
-    <div className={clsx('h-2 bg-white/5 rounded-full overflow-hidden border border-white/5', className)}>
-      <motion.div
-        initial={{ width: 0 }}
-        animate={{ width: `${pct}%` }}
-        transition={{ duration: 1, ease: 'easeOut' }}
-        className={clsx('h-full rounded-full bg-gradient-to-r', colors[color])}
+    <div className={clsx('h-2 bg-gray-800 rounded-full overflow-hidden', className)}>
+      <div
+        style={{ width: `${pct}%` }}
+        className={clsx('h-full transition-all duration-300', colors[color])}
       />
     </div>
   )
@@ -214,20 +206,16 @@ export function ProgressBar({ value, max = 100, color = 'indigo', className }) {
 // ── Empty State ──────────────────────────────────────────────────
 export function EmptyState({ icon: Icon, title, description, action, actionLabel }) {
   return (
-    <motion.div 
-      initial={{ opacity: 0, y: 20 }}
-      animate={{ opacity: 1, y: 0 }}
-      className="flex flex-col items-center justify-center py-20 px-6 text-center"
-    >
-      <div className="w-20 h-20 rounded-3xl bg-white/[0.03] border border-white/[0.08] flex items-center justify-center mb-6 shadow-2xl">
-        <Icon size={36} className="text-slate-500" />
+    <div className="flex flex-col items-center justify-center py-12 px-6 text-center">
+      <div className="h-12 w-12 text-gray-500 mb-4">
+        {Icon && <Icon className="w-full h-full" />}
       </div>
-      <h3 className="text-xl font-bold text-white mb-2">{title}</h3>
-      <p className="text-sm text-slate-400 max-w-sm mb-8 leading-relaxed">{description}</p>
+      <h3 className="text-lg font-semibold text-white mb-1">{title}</h3>
+      <p className="text-sm text-gray-400 max-w-sm mb-6">{description}</p>
       {action && (
         <Button onClick={action} variant="primary">{actionLabel}</Button>
       )}
-    </motion.div>
+    </div>
   )
 }
 
@@ -256,16 +244,8 @@ export function Avatar({ name, size = 'md', className, src }) {
   const sizes = { sm: 'w-8 h-8 text-[11px]', md: 'w-10 h-10 text-xs', lg: 'w-14 h-14 text-sm', xl: 'w-20 h-20 text-lg' }
   
   return (
-    <div className={clsx(
-      'relative group',
-      sizes[size],
-      className
-    )}>
-      <div className="absolute inset-0 rounded-full bg-indigo-500/20 blur-md opacity-0 group-hover:opacity-100 transition-opacity duration-300" />
-      <div className={clsx(
-        'relative h-full w-full rounded-full border-2 border-white/10 overflow-hidden bg-slate-800 flex items-center justify-center font-bold text-white',
-        'group-hover:border-indigo-500/50 transition-colors'
-      )}>
+    <div className={clsx('relative', sizes[size], className)}>
+      <div className="h-full w-full rounded-full border border-gray-700 overflow-hidden bg-gray-800 flex items-center justify-center font-medium text-gray-300">
         {src ? (
           <img src={src} alt={name || 'Avatar'} className="h-full w-full object-cover" />
         ) : (
@@ -302,14 +282,14 @@ export function Divider({ className }) {
 // ── Tag ──────────────────────────────────────────────────
 export function Tag({ children, className, variant = 'default' }) {
   const variants = {
-    default: 'bg-white/5 border-white/10 text-slate-400',
-    indigo: 'bg-indigo-500/10 border-indigo-500/20 text-indigo-400',
-    emerald: 'bg-emerald-500/10 border-emerald-500/20 text-emerald-400',
-    rose: 'bg-rose-500/10 border-rose-500/20 text-rose-400',
-    amber: 'bg-amber-500/10 border-amber-500/20 text-amber-400',
+    default: 'bg-gray-800 text-gray-300',
+    indigo: 'bg-indigo-900/50 text-indigo-300',
+    emerald: 'bg-emerald-900/50 text-emerald-300',
+    rose: 'bg-red-900/50 text-red-300',
+    amber: 'bg-amber-900/50 text-amber-300',
   }
   return (
-    <span className={clsx('px-2 py-0.5 rounded-md border text-[10px] font-bold uppercase tracking-wider', variants[variant], className)}>
+    <span className={clsx('px-2 py-1 rounded-md text-xs font-medium', variants[variant], className)}>
       {children}
     </span>
   )
@@ -323,10 +303,10 @@ export function FilterChip({ label, active, onClick, className }) {
       aria-pressed={active}
       onClick={onClick}
       className={clsx(
-        'px-4 py-2 rounded-xl border text-sm font-bold transition-all duration-300',
+        'px-3 py-1.5 rounded-md text-sm font-medium transition-colors duration-200 border',
         active 
-          ? 'bg-indigo-600 border-indigo-400 text-white shadow-lg shadow-indigo-600/20' 
-          : 'bg-white/5 border-white/5 text-slate-500 hover:border-white/20 hover:text-white',
+          ? 'bg-indigo-600 text-white border-indigo-600' 
+          : 'bg-gray-800 text-gray-400 border-gray-700 hover:bg-gray-700 hover:text-white',
         className
       )}
     >
