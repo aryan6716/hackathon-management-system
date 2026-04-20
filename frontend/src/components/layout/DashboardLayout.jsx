@@ -2,8 +2,6 @@ import React from 'react'
 import { Outlet } from 'react-router-dom'
 import Sidebar from './Sidebar'
 import Navbar from './Navbar'
-import { BackgroundBlobs, AnimatedGradient } from '../ui/Backgrounds'
-import { CursorGlow } from '../ui/CursorGlow'
 import { useApp } from '../../context/AppContext'
 import clsx from 'clsx'
 
@@ -12,11 +10,6 @@ const DashboardLayout = () => {
 
   return (
     <div className="relative min-h-screen bg-slate-950 text-slate-50 overflow-x-hidden">
-      {/* Background Elements */}
-      <AnimatedGradient />
-      <BackgroundBlobs />
-      <CursorGlow />
-      
       {/* Sidebar */}
       <Sidebar />
 
