@@ -36,7 +36,6 @@ export default function Navbar() {
   }, [])
 
   return (
-  return (
     <header 
       className={clsx(
         'fixed top-0 right-0 z-30 flex items-center transition-all duration-300 border-b border-gray-800 bg-gray-900',
@@ -81,7 +80,6 @@ export default function Navbar() {
           <UserProfileDropdown />
           
         </div>
-      </div>
       </div>
     </header>
   )

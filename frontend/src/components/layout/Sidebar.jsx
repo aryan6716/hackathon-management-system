@@ -59,21 +59,14 @@ export default function Sidebar() {
           sidebarCollapsed ? 'justify-center' : 'justify-between'
         )}>
           {!sidebarCollapsed && (
-            <div 
-              className="flex items-center gap-3 overflow-hidden"
-            >
-              <div className="w-9 h-9 rounded-md bg-indigo-600 flex items-center justify-center shrink-0">
-                <span className="text-white font-semibold text-lg">H</span>
-              </div>
-              <span className="text-white text-lg font-semibold tracking-tight whitespace-nowrap">
-                HackathonHub
-              </span>
+            <div className="font-semibold text-lg text-white">
+              HackathonHub
             </div>
           )}
 
           {sidebarCollapsed && (
-            <div className="w-10 h-10 rounded-xl bg-indigo-600/10 border border-indigo-500/20 flex items-center justify-center">
-              <span className="font-bold text-indigo-400 text-lg">H</span>
+            <div className="font-semibold text-lg text-white">
+              H
             </div>
           )}
 
@@ -146,7 +139,7 @@ export default function Sidebar() {
             {!sidebarCollapsed && <span>Sign Out</span>}
           </button>
         </div>
-      </motion.aside>
+      </aside>
     </>
   )
 }
