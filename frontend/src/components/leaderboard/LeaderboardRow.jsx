@@ -1,42 +1,36 @@
 import React from 'react'
-import { motion } from 'framer-motion'
 import { Avatar, Badge } from '../ui'
 import { Zap } from 'lucide-react'
 import clsx from 'clsx'
-
-const tableRow = {
-  hidden: { opacity: 0, x: -20 },
-  show: { opacity: 1, x: 0, transition: { type: "spring" } }
-}
 
 export function LeaderboardRow({ entry, idx }) {
   const rank = idx + 1
   const rankColor = idx < 3 ? 'font-black drop-shadow-md' : 'font-bold text-gray-400'
 
   return (
-    <motion.div variants={tableRow} className="flex items-center gap-4 px-6 py-5 transition-all duration-200 hover:bg-white/[0.04] group">
+    <div className="flex items-center gap-4 px-6 py-4 transition-all duration-200 hover:bg-gray-800/50 group">
         {/* Rank */}
         <div className="w-12 text-center flex-shrink-0">
         {idx < 3
-            ? <span className="text-[22px] drop-shadow-[0_0_10px_rgba(255,255,255,0.2)]">{['🥇', '🥈', '🥉'][idx]}</span>
-            : <span className={clsx('font-display text-base', rankColor)}>#{rank}</span>
+            ? <span className="text-xl">{['🥇', '🥈', '🥉'][idx]}</span>
+            : <span className={clsx('text-sm', rankColor)}>#{rank}</span>
         }
         </div>
 
         {/* Team */}
         <div className="flex items-center gap-4 flex-1 min-w-0">
-          <Avatar name={entry.team_name} size="md" className="ring-2 ring-white/5 group-hover:ring-brand-violet/30 transition-all shadow-md" />
+          <Avatar name={entry.team_name} size="md" className="ring-2 ring-gray-800 transition-all shadow-sm" />
           <div className="min-w-0">
-              <p className="text-sm sm:text-base font-bold text-white truncate group-hover:text-brand-violet transition-colors">{entry.team_name}</p>
-              <p className="text-[10px] text-gray-400 font-bold uppercase tracking-wider mt-1">{entry.judge_count} Appraisals</p>
+              <p className="text-sm font-medium text-gray-200 truncate">{entry.team_name}</p>
+              <p className="text-[10px] text-gray-500 uppercase tracking-widest mt-0.5">{entry.judge_count} Appraisals</p>
           </div>
         </div>
 
         {/* Score */}
         <div className="hidden sm:block w-32 text-center flex-shrink-0">
-            <div className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-xl bg-dark-800/80 border border-glass-border shadow-inner">
-                <Zap className="w-3.5 h-3.5 text-brand-accent drop-shadow-glow" />
-                <span className="font-display font-900 text-base text-white tracking-tighter">
+            <div className="inline-flex items-center gap-1.5 px-3 py-1 rounded bg-gray-900 border border-gray-800">
+                <Zap className="w-3 h-3 text-indigo-400" />
+                <span className="font-semibold text-sm text-gray-200">
                     {Number(entry.avg_score || entry.final_score || 0).toFixed(1)}
                 </span>
             </div>
@@ -44,10 +38,10 @@ export function LeaderboardRow({ entry, idx }) {
 
         {/* Status */}
         <div className="hidden sm:block w-24 text-center flex-shrink-0">
-          <Badge variant={idx < 10 ? 'active' : 'default'} className="!px-3 !py-1 scale-95">
-              {idx < 10 ? 'Legendary' : 'Pro'}
+          <Badge variant={idx < 10 ? 'active' : 'default'} className="!px-2 !py-0.5 text-xs">
+              {idx < 10 ? 'Elite' : 'Pro'}
           </Badge>
         </div>
-    </motion.div>
+    </div>
   )
 }

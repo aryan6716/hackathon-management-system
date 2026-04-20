@@ -1,9 +1,8 @@
 import React from 'react'
 import { NavLink, useNavigate } from 'react-router-dom'
-import { motion, AnimatePresence } from 'framer-motion'
 import {
   LayoutDashboard, Zap, Users, Upload, Trophy, User,
-  LogOut, ChevronLeft, ChevronRight, Sparkles
+  LogOut, ChevronLeft, ChevronRight
 } from 'lucide-react'
 import { useApp } from '../../context/AppContext'
 import { useAuth } from '../../context/AuthContext'
@@ -37,28 +36,21 @@ export default function Sidebar() {
 
   return (
     <>
-      <AnimatePresence>
-        {mobileSidebarOpen && (
-          <motion.div
-            initial={{ opacity: 0 }}
-            animate={{ opacity: 1 }}
-            exit={{ opacity: 0 }}
-            className="fixed inset-0 bg-slate-950/60 backdrop-blur-sm z-40 lg:hidden"
-            onClick={() => setMobileSidebarOpen(false)}
-          />
-        )}
-      </AnimatePresence>
+      {mobileSidebarOpen && (
+        <div
+          className="fixed inset-0 bg-gray-900/60 z-40 lg:hidden"
+          onClick={() => setMobileSidebarOpen(false)}
+        />
+      )}
 
-      <motion.aside 
-        initial={false}
-        animate={{ 
+      <aside 
+        style={{ 
           width: sidebarCollapsed ? 80 : 288,
-          x: mobileSidebarOpen ? 0 : (typeof window !== 'undefined' && window.innerWidth < 1024 ? -288 : 0)
+          transform: mobileSidebarOpen || (typeof window !== 'undefined' && window.innerWidth >= 1024) ? 'translateX(0)' : 'translateX(-100%)'
         }}
-        transition={{ type: "spring", stiffness: 300, damping: 30 }}
         className={clsx(
           'fixed top-0 left-0 h-full z-50 flex flex-col',
-          'bg-gradient-to-b from-[#0f172a] to-[#020617] backdrop-blur-2xl border-r border-white/5 shadow-2xl transition-all duration-300'
+          'bg-gray-900 border-r border-gray-800 transition-all duration-300'
         )}
       >
         {/* Header/Logo */}
@@ -67,23 +59,21 @@ export default function Sidebar() {
           sidebarCollapsed ? 'justify-center' : 'justify-between'
         )}>
           {!sidebarCollapsed && (
-            <motion.div 
-              initial={{ opacity: 0, x: -10 }} 
-              animate={{ opacity: 1, x: 0 }} 
+            <div 
               className="flex items-center gap-3 overflow-hidden"
             >
-              <div className="w-9 h-9 rounded-xl bg-gradient-to-br from-indigo-600 to-violet-600 flex items-center justify-center shadow-lg shadow-indigo-500/20 shrink-0">
-                <Sparkles className="w-5 h-5 text-white" />
+              <div className="w-9 h-9 rounded-md bg-indigo-600 flex items-center justify-center shrink-0">
+                <span className="text-white font-semibold text-lg">H</span>
               </div>
-              <span className="text-white text-xl font-bold tracking-tight whitespace-nowrap bg-gradient-to-r from-white to-slate-400 bg-clip-text text-transparent">
+              <span className="text-white text-lg font-semibold tracking-tight whitespace-nowrap">
                 HackathonHub
               </span>
-            </motion.div>
+            </div>
           )}
 
           {sidebarCollapsed && (
             <div className="w-10 h-10 rounded-xl bg-indigo-600/10 border border-indigo-500/20 flex items-center justify-center">
-              <Sparkles className="w-5 h-5 text-indigo-400" />
+              <span className="font-bold text-indigo-400 text-lg">H</span>
             </div>
           )}
 
@@ -104,40 +94,22 @@ export default function Sidebar() {
               to={path}
               onClick={() => setMobileSidebarOpen(false)}
               className={({ isActive }) => clsx(
-                'relative flex items-center gap-3.5 px-3 py-3 rounded-xl text-sm font-semibold transition-all duration-300 group overflow-hidden',
-                isActive ? 'text-white' : 'text-slate-500 hover:text-slate-200'
+                'relative flex items-center gap-3 px-3 py-2 rounded-lg text-sm font-medium transition-all duration-200 group',
+                isActive ? 'text-white bg-gray-800' : 'text-gray-400 hover:text-gray-200 hover:bg-gray-900'
               )}
             >
               {({ isActive }) => (
                 <>
-                  <AnimatePresence>
-                    {isActive && (
-                      <motion.div
-                        layoutId="active-pill"
-                        initial={{ opacity: 0 }}
-                        animate={{ opacity: 1 }}
-                        className="absolute inset-0 bg-white/10 text-white shadow-md z-0 rounded-xl"
-                      />
-                    )}
-                  </AnimatePresence>
-                  
                   <Icon className={clsx(
-                    "w-5 h-5 relative z-10 transition-all duration-300",
-                    isActive ? "text-indigo-400 scale-110" : "group-hover:scale-110"
+                    "w-5 h-5 transition-all duration-200",
+                    isActive ? "text-indigo-400" : "text-gray-500 group-hover:text-gray-400"
                   )} />
                   
-                  <AnimatePresence>
-                    {!sidebarCollapsed && (
-                      <motion.span 
-                        initial={{ opacity: 0, x: -10 }}
-                        animate={{ opacity: 1, x: 0 }}
-                        exit={{ opacity: 0, x: -10 }}
-                        className="relative z-10 whitespace-nowrap"
-                      >
-                        {label}
-                      </motion.span>
-                    )}
-                  </AnimatePresence>
+                  {!sidebarCollapsed && (
+                    <span className="whitespace-nowrap">
+                      {label}
+                    </span>
+                  )}
                 </>
               )}
             </NavLink>
@@ -150,12 +122,12 @@ export default function Sidebar() {
             <Avatar name={user?.name || "U"} size={sidebarCollapsed ? "sm" : "md"} />
             {!sidebarCollapsed && (
               <div className="min-w-0 flex-1">
-                <p className="text-white text-sm font-bold truncate">
+                <p className="text-white text-sm font-medium truncate">
                   {loading ? "..." : (user?.name || "User")}
                 </p>
                 <div className="flex items-center gap-1.5">
-                  <span className="w-1.5 h-1.5 rounded-full bg-emerald-500 animate-pulse" />
-                  <p className="text-[10px] uppercase font-bold tracking-wider text-slate-500">
+                  <span className="w-1.5 h-1.5 rounded-full bg-emerald-500" />
+                  <p className="text-xs text-gray-500 capitalize">
                     Online
                   </p>
                 </div>
@@ -163,18 +135,16 @@ export default function Sidebar() {
             )}
           </div>
 
-          <motion.button
-            whileHover={{ scale: 1.02, x: 2 }}
-            whileTap={{ scale: 0.98 }}
+          <button
             onClick={handleLogout}
             className={clsx(
-              "flex items-center gap-3 text-sm font-bold text-slate-500 hover:text-red-400 rounded-xl transition-all",
-              sidebarCollapsed ? "justify-center p-3" : "w-full px-4 py-3 hover:bg-red-500/5"
+              "flex items-center gap-3 text-sm font-medium text-gray-400 hover:text-red-400 rounded-lg transition-all",
+              sidebarCollapsed ? "justify-center p-2" : "w-full px-3 py-2 hover:bg-gray-800"
             )}
           >
             <LogOut size={18} className="shrink-0" />
             {!sidebarCollapsed && <span>Sign Out</span>}
-          </motion.button>
+          </button>
         </div>
       </motion.aside>
     </>

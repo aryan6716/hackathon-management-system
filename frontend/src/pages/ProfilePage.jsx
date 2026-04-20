@@ -1,5 +1,4 @@
 import React, { useState, useEffect } from 'react'
-import { motion, AnimatePresence } from 'framer-motion'
 import { Edit3, Save, Key, User, Mail, Link as LinkIcon, Twitter, Github, Lock } from 'lucide-react'
 import { useAuth } from '../context/AuthContext'
 import { Card, Button, Badge, Avatar, Input, Skeleton } from '../components/ui'
@@ -70,12 +69,12 @@ export default function ProfilePage() {
 
       {/* HEADER */}
       <div>
-        <h1 className="font-display font-800 text-3xl sm:text-4xl tracking-tight bg-gradient-to-r from-purple-400 to-indigo-400 bg-clip-text text-transparent">Profile Settings</h1>
-        <p className="text-gray-400 text-sm mt-2 font-medium">Manage your account details and preferences.</p>
+        <h1 className="text-2xl font-semibold text-gray-100 tracking-tight">Profile Settings</h1>
+        <p className="text-gray-400 text-sm mt-1">Manage your account details and preferences.</p>
       </div>
 
       {/* PROFILE CARD */}
-      <Card className="p-8 md:p-10 glass-card border border-white/10 backdrop-blur-xl">
+      <Card className="p-6 md:p-8 border border-gray-800 bg-gray-900">
 
         {/* USER INFO */}
         <div className="flex items-center gap-6 mb-8">
@@ -88,18 +87,11 @@ export default function ProfilePage() {
         </div>
 
         {/* SAVE MESSAGE */}
-        <AnimatePresence>
-          {saved && (
-            <motion.div
-              initial={{ opacity: 0 }}
-              animate={{ opacity: 1 }}
-              exit={{ opacity: 0 }}
-              className="mb-6 p-4 bg-emerald-500/10 border border-emerald-500/20 text-emerald-400 rounded-xl text-sm font-medium flex items-center justify-center flex-1"
-            >
-              Profile updated successfully.
-            </motion.div>
-          )}
-        </AnimatePresence>
+        {saved && (
+          <div className="mb-6 p-4 bg-emerald-900/40 border border-emerald-800 text-emerald-400 rounded-xl text-sm font-medium flex items-center justify-center flex-1">
+            Profile updated successfully.
+          </div>
+        )}
 
         {/* INPUTS */}
         <div className="grid md:grid-cols-2 gap-6">
@@ -119,10 +111,10 @@ export default function ProfilePage() {
         </div>
 
         <div className="mt-6 space-y-2">
-            <label htmlFor="profile-bio" className="block text-xs font-bold uppercase tracking-widest text-slate-400 mb-2">Bio</label>
+            <label htmlFor="profile-bio" className="block text-xs font-semibold uppercase tracking-wider text-gray-400 mb-2">Bio</label>
             <textarea
               id="profile-bio"
-              className="w-full bg-dark-800/50 backdrop-blur-sm border border-glass-border rounded-xl px-4 py-3.5 text-sm text-slate-200 placeholder:text-slate-600 outline-none transition-all focus:border-brand-violet/50 focus:ring-4 focus:ring-brand-violet/10 resize-none"
+              className="w-full bg-gray-800 border border-gray-700 rounded-lg px-4 py-3 text-sm text-gray-200 placeholder:text-gray-500 outline-none transition-all focus:border-indigo-500 focus:ring-1 focus:ring-indigo-500 resize-none"
               value={form.bio}
               onChange={(e) => update('bio', e.target.value)}
               disabled={!editing}
@@ -160,15 +152,15 @@ export default function ProfilePage() {
 
         {/* ACTION BUTTON */}
         <div className="mt-8">
-          <Button onClick={editing ? save : () => setEditing(true)} className="btn-premium-primary shadow-lg shadow-purple-500/30 px-8">
+          <Button onClick={editing ? save : () => setEditing(true)} className="px-8">
             {editing ? <><Save className="w-4 h-4 mr-2"/>Save</> : <><Edit3 className="w-4 h-4 mr-2"/>Edit</>}
           </Button>
         </div>
       </Card>
 
       {/* SECURITY */}
-      <Card className="p-8 md:p-10 glass-card border border-white/10 backdrop-blur-xl">
-        <h3 className="text-white font-display font-800 text-xl mb-6">Security</h3>
+      <Card className="p-6 md:p-8 border border-gray-800 bg-gray-900">
+        <h3 className="text-gray-100 font-semibold text-xl mb-6">Security</h3>
 
         <Input label="Password" type="password" icon={Lock} disabled />
         <Button className="mt-6" disabled variant="secondary">

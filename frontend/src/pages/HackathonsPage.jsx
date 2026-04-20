@@ -47,40 +47,40 @@ export default function HackathonsPage() {
 
   if (error) {
     return (
-      <div className="min-h-[400px] flex flex-col items-center justify-center p-6 text-center animate-in fade-in duration-500">
-        <div className="bg-red-500/10 border border-red-500/20 text-red-400 p-6 rounded-xl max-w-sm mx-auto">
-          <h2 className="text-xl font-display font-800 mb-2">Connection Error</h2>
+      <div className="min-h-[400px] flex flex-col items-center justify-center p-6 text-center">
+        <div className="bg-red-900/50 border border-red-700 text-red-200 p-6 rounded-lg max-w-sm mx-auto">
+          <h2 className="text-xl font-bold mb-2">Connection Error</h2>
           <p className="mb-6">{error}</p>
-          <Button variant="secondary" onClick={() => window.location.reload()} className="border-red-500/30 hover:bg-red-500/20 text-red-400">Retry Loading</Button>
+          <Button variant="secondary" onClick={() => window.location.reload()}>Retry Loading</Button>
         </div>
       </div>
     )
   }
 
   return (
-    <div className="px-6 lg:px-10 py-6 space-y-8 animate-in fade-in duration-700 pb-12">
+    <div className="px-4 lg:px-8 py-6 space-y-6 pb-12">
       {/* HEADER */}
       <div className="flex flex-col sm:flex-row sm:items-end justify-between gap-4">
         <div>
-          <h1 className="font-display font-800 text-3xl md:text-4xl bg-gradient-to-r from-purple-400 to-indigo-400 bg-clip-text text-transparent">Explore Hackathons</h1>
+          <h1 className="text-2xl font-semibold text-gray-100 tracking-tight">Explore Hackathons</h1>
           <p className="text-gray-400 text-sm mt-1 max-w-lg">
             Find the perfect competition to showcase your skills, collaborate with top talent, and win amazing prizes.
           </p>
         </div>
-        <Button variant="primary" size="sm" onClick={() => navigate('/teams')} className="btn-premium-primary shadow-lg shadow-purple-500/30">
+        <Button variant="primary" onClick={() => navigate('/teams')}>
             <Plus className="w-4 h-4 mr-2" /> Start a Team
         </Button>
       </div>
 
       {/* SEARCH + FILTER */}
-      <div className="flex flex-col md:flex-row items-center gap-4 bg-dark-800/40 p-4 rounded-2xl border border-white/5 backdrop-blur-sm">
+      <div className="flex flex-col md:flex-row items-center gap-4 bg-gray-900 p-4 rounded-lg border border-gray-800">
         <div className="w-full md:flex-1">
             <Input 
-                placeholder="Search by name, tech stack, or description..." 
+                placeholder="Search..." 
                 icon={Search}
                 value={search}
                 onChange={(e) => setSearch(e.target.value)}
-                className="!bg-dark-900/50"
+                className="bg-gray-800 block w-full"
             />
         </div>
 
@@ -111,11 +111,11 @@ export default function HackathonsPage() {
             />
         </Card>
       ) : (
-        <div className="space-y-8">
+        <div className="space-y-8 mt-6">
             {featured.length > 0 && status === 'All' && !search && (
                 <div>
-                    <h2 className="font-display font-700 text-white text-lg mb-4 flex items-center gap-2">
-                        <Star className="w-5 h-5 text-amber-400 fill-amber-400" />
+                    <h2 className="font-semibold text-gray-100 text-lg mb-4 flex items-center gap-2">
+                        <Star className="w-5 h-5 text-amber-500" />
                         Featured Competitions
                     </h2>
                     <div className="grid gap-6 md:grid-cols-2 lg:grid-cols-4">
@@ -127,7 +127,7 @@ export default function HackathonsPage() {
             )}
 
             <div>
-                <h2 className="font-display font-700 text-white text-lg mb-4">
+                <h2 className="font-semibold text-gray-100 text-lg mb-4">
                     {search || status !== 'All' ? `${filtered.length} Results Found` : 'Upcoming & Ongoing Events'}
                 </h2>
                 <div className="grid gap-6 md:grid-cols-2 lg:grid-cols-4">

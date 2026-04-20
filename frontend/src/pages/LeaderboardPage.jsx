@@ -1,5 +1,4 @@
 import React, { useState, useEffect } from 'react'
-import { motion } from 'framer-motion'
 import { Trophy, Zap, TrendingUp } from 'lucide-react'
 import { Card, Badge, Avatar, Skeleton, SectionHeader, EmptyState, Button } from '../components/ui'
 import { apiGet } from '../utils/api'
@@ -20,55 +19,30 @@ function PodiumCard({ entry, position }) {
   const order = position === 1 ? 'order-2 z-10' : position === 2 ? 'order-1' : 'order-3'
 
   return (
-    <motion.div 
-      initial={{ opacity: 0, y: 50 }}
-      animate={{ opacity: 1, y: 0 }}
-      transition={{ delay: cfg.delay, type: 'spring', stiffness: 200, damping: 20 }}
-      className={clsx('flex-1 flex flex-col items-center relative', order)}
-    >
-      <motion.div 
-        animate={{ y: [0, -3, 0] }} 
-        transition={{ duration: 0.8, ease: "easeOut", delay: position * 0.1 }}
-        className="text-4xl sm:text-5xl mb-3 drop-shadow-[0_0_15px_rgba(255,255,255,0.4)]"
-      >
+    <div className={clsx('flex-1 flex flex-col items-center relative', order)}>
+      <div className="text-4xl sm:text-5xl mb-3">
         {cfg.icon}
-      </motion.div>
-      <Avatar name={entry.team} size={cfg.size} className={clsx('mb-3 ring-4 shadow-[0_0_30px_rgba(0,0,0,0.5)] z-20', cfg.ring)} />
+      </div>
+      <Avatar name={entry.team} size={cfg.size} className={clsx('mb-3 ring-4 z-20', cfg.ring)} />
       
-      <motion.div 
-        layoutId={`podium-base-${position}`}
+      <div 
         className={clsx(
-          'w-full rounded-t-3xl border border-b-0 bg-gradient-to-b text-center px-4 shadow-[inset_0_2px_20px_rgba(255,255,255,0.05)] transition-all group hover:bg-white/5 relative overflow-hidden',
-          cfg.color, cfg.border, cfg.height,
-          position === 1 ? 'sm:scale-110 sm:-translate-y-2' : ''
+          'w-full rounded-t-lg border border-b-0 bg-gray-900 text-center px-4 py-6',
+          cfg.border, cfg.height,
+          position === 1 ? 'sm:scale-105 sm:-translate-y-2' : ''
         )}
       >
-        <div className="absolute inset-0 bg-gradient-to-t from-dark-950 to-transparent opacity-80 pointer-events-none" />
         <div className="relative z-10">
-          <p className={clsx('text-base sm:text-lg font-display font-900 truncate tracking-tight', cfg.label)}>{entry.team}</p>
-          <div className={clsx('text-sm sm:text-base mt-1 font-black flex items-center justify-center gap-1.5', cfg.score)}>
+          <p className={clsx('text-base sm:text-lg font-bold truncate tracking-tight', cfg.label)}>{entry.team}</p>
+          <div className={clsx('text-sm sm:text-base mt-1 font-bold flex items-center justify-center gap-1.5', cfg.score)}>
               <TrendingUp className="w-4 h-4" />
               {Number(entry.score || 0).toFixed(1)}
           </div>
-          <p className="text-[10px] text-gray-400 mt-2 font-bold uppercase tracking-widest">{entry.members} REVIEWS</p>
+          <p className="text-[10px] text-gray-400 mt-2 uppercase tracking-widest">{entry.members} REVIEWS</p>
         </div>
-      </motion.div>
-    </motion.div>
+      </div>
+    </div>
   )
-}
-
-
-const tableContainer = {
-  hidden: { opacity: 0 },
-  show: {
-    opacity: 1,
-    transition: { staggerChildren: 0.05, delayChildren: 0.4 }
-  }
-}
-
-const tableRow = {
-  hidden: { opacity: 0, x: -20 },
-  show: { opacity: 1, x: 0, transition: { type: "spring", stiffness: 300, damping: 24 } }
 }
 
 export default function LeaderboardPage() {
@@ -84,23 +58,20 @@ export default function LeaderboardPage() {
   if (loading) return <LeaderboardSkeleton />
 
   return (
-    <motion.div 
-      initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }}
-      className="px-6 lg:px-10 py-6 space-y-8 pb-12"
-    >
+    <div className="px-4 lg:px-8 py-6 space-y-6 pb-12">
       {/* ── HEADER ── */}
-      <div className="flex flex-col sm:flex-row sm:items-end justify-between gap-5">
-        <motion.div initial={{ opacity: 0, x: -20 }} animate={{ opacity: 1, x: 0 }}>
-          <h1 className="font-display font-800 text-3xl sm:text-4xl flex items-center gap-3 tracking-tight bg-gradient-to-r from-purple-400 to-indigo-400 bg-clip-text text-transparent">
-            <Trophy className="w-8 h-8 sm:w-10 sm:h-10 text-amber-400 drop-shadow-[0_0_20px_rgba(251,191,36,0.6)]" />
+      <div className="flex flex-col sm:flex-row sm:items-end justify-between gap-4">
+        <div>
+          <h1 className="text-2xl font-semibold flex items-center gap-2 tracking-tight text-gray-100">
+            <Trophy className="w-6 h-6 text-amber-400" />
             Leaderboard
           </h1>
-          <p className="text-gray-400 text-sm mt-2 max-w-lg font-medium leading-relaxed">
+          <p className="text-gray-400 text-sm mt-1 max-w-lg">
             Live ranking of teams based on current scoring data.
           </p>
-        </motion.div>
-        <div className="flex items-center gap-2.5 px-4 py-2 bg-dark-800/80 rounded-xl border border-glass-border shadow-glass backdrop-blur-md self-start sm:self-auto">
-          <span className="text-[10px] font-bold text-slate-300 uppercase tracking-widest leading-none">Live Data Feed</span>
+        </div>
+        <div className="flex items-center gap-2 px-3 py-1.5 bg-gray-900 border border-gray-800 rounded-lg">
+          <span className="text-[10px] font-semibold text-gray-300 uppercase tracking-wider">Live Data</span>
         </div>
       </div>
 
@@ -115,10 +86,9 @@ export default function LeaderboardPage() {
 
       {/* ── PODIUM ── */}
       {top3.length > 0 && (
-        <Card className="p-8 sm:p-12 overflow-hidden relative border border-white/10 bg-[#0B0F1A]/50 glass-card backdrop-blur-xl">
-          <div className="absolute inset-0 bg-gradient-radial-purple pointer-events-none opacity-50 mix-blend-screen" />
-          <SectionHeader title="The Elite Three" subtitle="Top performing squads globally" center className="relative z-10" />
-          <div className="flex items-end justify-center gap-4 sm:gap-6 max-w-3xl mx-auto pt-10 relative z-10">
+        <Card className="p-6 sm:p-10 border border-gray-800 bg-gray-900">
+          <SectionHeader title="Top Three Teams" subtitle="Top performing squads globally" center />
+          <div className="flex items-end justify-center gap-4 sm:gap-6 max-w-3xl mx-auto pt-8">
             {top3.map((entry, i) => {
               const position = i === 0 ? 2 : i === 1 ? 1 : 3
               return (
@@ -138,35 +108,35 @@ export default function LeaderboardPage() {
       )}
 
       {/* ── RANKINGS TABLE ── */}
-      <motion.div variants={tableContainer} initial="hidden" animate="show">
-        <Card className="overflow-hidden shadow-[0_8px_32px_rgba(0,0,0,0.4)] glass-card border border-white/10 backdrop-blur-xl">
+      <div>
+        <Card className="overflow-hidden border border-gray-800 bg-gray-900 p-0">
             
-            <div className="flex items-center gap-4 px-6 py-4 border-b border-glass-border bg-white/[0.02]">
-              <span className="text-[10px] font-bold text-gray-400 uppercase tracking-widest w-12 text-center">Rank</span>
-              <span className="text-[10px] font-bold text-gray-400 uppercase tracking-widest flex-1">Squad Name</span>
-              <span className="text-[10px] font-bold text-gray-400 uppercase tracking-widest hidden sm:block w-32 text-center">Avg Score</span>
-              <span className="text-[10px] font-bold text-gray-400 uppercase tracking-widest w-24 text-center hidden sm:block">Standing</span>
+            <div className="flex items-center gap-4 px-6 py-4 border-b border-gray-800 bg-gray-800/50">
+              <span className="text-xs font-semibold text-gray-400 w-12 text-center">Rank</span>
+              <span className="text-xs font-semibold text-gray-400 flex-1">Team Name</span>
+              <span className="text-xs font-semibold text-gray-400 hidden sm:block w-32 text-center">Avg Score</span>
+              <span className="text-xs font-semibold text-gray-400 w-24 text-center hidden sm:block">Standing</span>
             </div>
 
-            <div className="divide-y divide-glass-border bg-dark-900/40">
+            <div className="divide-y divide-gray-800">
             {leaderboard.map((entry, idx) => (
                 <LeaderboardRow key={entry.team_id || idx} entry={entry} idx={idx} />
             ))}
 
             {leaderboard.length === 0 && !loading && (
-                <motion.div variants={tableRow} className="px-6 py-16 text-center">
+                <div className="px-6 py-12 text-center">
                     <EmptyState 
                         icon={Trophy}
                         title="No Rankings Yet"
-                        description="No scored submissions are available yet. Submit a project to appear on the leaderboard."
+                        description="No scored submissions are available yet."
                         action={() => navigate('/submissions')}
-                        actionLabel="Go to Submissions"
+                        actionLabel="View Submissions"
                     />
-                </motion.div>
+                </div>
             )}
             </div>
         </Card>
-      </motion.div>
-    </motion.div>
+      </div>
+    </div>
   )
 }

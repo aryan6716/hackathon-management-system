@@ -1,6 +1,5 @@
 import React, { useId } from 'react'
 import clsx from 'clsx'
-import { motion, AnimatePresence } from 'framer-motion'
 
 // ── Button ──────────────────────────────────────────────────
 export function Button({ variant = 'primary', size = 'md', children, className, loading, icon: Icon, type = 'button', disabled, ...props }) {

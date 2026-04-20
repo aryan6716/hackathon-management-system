@@ -1,5 +1,4 @@
 import React, { useState } from 'react'
-import { motion } from 'framer-motion'
 import { Users, Hash, UserPlus } from 'lucide-react'
 import { Button, Input } from '../ui'
 import { useJoinTeam } from '../../hooks/useTeams'
@@ -19,13 +18,14 @@ export function JoinTeamForm({ onJoined }) {
 
   if (success) {
     return (
-      <motion.div initial={{ opacity: 0, scale: 0.9 }} animate={{ opacity: 1, scale: 1 }} className="text-center py-10">
-        <div className="w-16 h-16 rounded-2xl bg-brand-violet/10 border border-brand-violet/20 shadow-[0_0_30px_rgba(124,92,255,0.15)] flex items-center justify-center mx-auto mb-5">
-          <Users className="w-8 h-8 text-brand-violet" />
+    return (
+      <div className="text-center py-10">
+        <div className="w-16 h-16 rounded-full bg-indigo-900/50 border border-indigo-700 flex items-center justify-center mx-auto mb-6">
+          <Users className="w-8 h-8 text-indigo-400" />
         </div>
-        <h3 className="font-display font-800 text-white text-xl tracking-tight mb-2">You Joined the Team</h3>
-        <p className="text-sm font-medium text-slate-400">You are now part of this team.</p>
-      </motion.div>
+        <h3 className="text-white text-xl font-bold mb-2">You Joined the Team</h3>
+        <p className="text-sm text-gray-400">You are now part of this team.</p>
+      </div>
     )
   }
 
@@ -40,7 +40,7 @@ export function JoinTeamForm({ onJoined }) {
         icon={Hash}
         error={error}
       />
-      <Button onClick={handleJoin} loading={loading} className="w-full py-4 mt-2 btn-premium-primary shadow-lg shadow-purple-500/30" disabled={!code}>
+      <Button onClick={handleJoin} loading={loading} className="w-full mt-2" disabled={!code}>
         <UserPlus className="w-5 h-5 mr-2" /> Join Team
       </Button>
     </div>

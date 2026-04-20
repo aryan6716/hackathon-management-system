@@ -2,9 +2,9 @@ import { Upload } from "lucide-react";
 import React, { useEffect, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { useAuth } from "../context/AuthContext";
-import { 
-  Users, Zap, Activity, Trophy, ArrowRight, 
-  Clock, Sparkles, Target, Rocket
+import {
+  Users, Zap, Activity, Trophy, ArrowRight,
+  Clock, Target, Rocket
 } from "lucide-react";
 import { Card, Button, StatCard, Badge, SectionHeader } from "../components/ui";
 import { apiGet } from "../utils/api";
@@ -44,7 +44,7 @@ export default function Dashboard() {
             <div className="h-6 w-48 bg-white/10 rounded" />
             <div className="h-96 bg-white/5 border border-white/5 rounded-[24px]" />
           </div>
-          
+
           {/* SIDE ACTIVITY SKELETON */}
           <div className="space-y-6">
             <div className="h-6 w-32 bg-white/10 rounded" />
@@ -96,32 +96,32 @@ export default function Dashboard() {
       {/* STATS GRID */}
       <div>
         <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6">
-          <StatCard 
-            label="Active Hackers" 
-            value={stats.users.toLocaleString()} 
-            icon={Users} 
-            delta={12.5} 
+          <StatCard
+            label="Active Hackers"
+            value={stats.users.toLocaleString()}
+            icon={Users}
+            delta={12.5}
             isPositive={true}
           />
-          <StatCard 
-            label="Live Operations" 
-            value={stats.events.toLocaleString()} 
-            icon={Zap} 
-            delta="2 Global" 
+          <StatCard
+            label="Live Operations"
+            value={stats.events.toLocaleString()}
+            icon={Zap}
+            delta="2 Global"
             isPositive={true}
           />
-          <StatCard 
-            label="Total Squads" 
-            value={stats.teams.toLocaleString()} 
-            icon={Target} 
-            delta={-3} 
+          <StatCard
+            label="Total Squads"
+            value={stats.teams.toLocaleString()}
+            icon={Target}
+            delta={-3}
             isPositive={false}
           />
-          <StatCard 
-            label="Submissions" 
-            value={stats.projects.toLocaleString()} 
-            icon={Upload} 
-            delta="+24 Today" 
+          <StatCard
+            label="Submissions"
+            value={stats.projects.toLocaleString()}
+            icon={Upload}
+            delta="+24 Today"
             isPositive={true}
           />
         </div>
@@ -130,8 +130,8 @@ export default function Dashboard() {
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
         {/* LEADERBOARD SECTION */}
         <div className="lg:col-span-2 space-y-6">
-          <SectionHeader 
-            title="Top Team Standings" 
+          <SectionHeader
+            title="Top Team Standings"
             subtitle="Leading teams from recent scoring activity"
             className="mb-0"
           />
@@ -147,8 +147,8 @@ export default function Dashboard() {
             ) : (
               <div className="divide-y divide-gray-800">
                 {leaderboard.map((team, idx) => (
-                  <div 
-                    key={team.rank} 
+                  <div
+                    key={team.rank}
                     className="p-4 hover:bg-gray-800 flex items-center justify-between transition-colors cursor-pointer"
                     onClick={() => navigate('/leaderboard')}
                   >
@@ -156,11 +156,11 @@ export default function Dashboard() {
                       <div className={clsx(
                         "w-10 h-10 rounded-md flex items-center justify-center font-semibold text-sm border",
                         idx === 0 ? "bg-amber-900/50 border-amber-700 text-amber-500" :
-                        idx === 1 ? "bg-gray-700 border-gray-600 text-gray-300" :
-                        idx === 2 ? "bg-orange-900/50 border-orange-800 text-orange-500" :
-                        "bg-gray-800 border-gray-700 text-gray-400"
+                          idx === 1 ? "bg-gray-700 border-gray-600 text-gray-300" :
+                            idx === 2 ? "bg-orange-900/50 border-orange-800 text-orange-500" :
+                              "bg-gray-800 border-gray-700 text-gray-400"
                       )}>
-                        {idx < 3 ? ['🥇','🥈','🥉'][idx] : `#${team.rank}`}
+                        {idx < 3 ? ['🥇', '🥈', '🥉'][idx] : `#${team.rank}`}
                       </div>
                       <div>
                         <h3 className="font-medium text-gray-200">

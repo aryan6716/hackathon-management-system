@@ -1,6 +1,5 @@
 import React, { useState, useEffect } from 'react'
 import { useLocation } from 'react-router-dom'
-import { motion, AnimatePresence } from 'framer-motion'
 import { Menu } from 'lucide-react'
 import { useAuth } from '../../context/AuthContext'
 import { useApp } from '../../context/AppContext'
@@ -9,11 +8,11 @@ import clsx from 'clsx'
 
 const PAGE_TITLES = {
   '/dashboard': { title: 'Dashboard', subtitle: 'Overview & Metrics' },
-  '/hackathons': { title: 'Hackathons', subtitle: 'Explore & Participate' },
-  '/teams': { title: 'Squads', subtitle: 'Collaborate with hackers' },
-  '/submissions': { title: 'Submissions', subtitle: 'Manage your portfolio' },
-  '/leaderboard': { title: 'Leaderboard', subtitle: 'Global Hall of Fame' },
-  '/profile': { title: 'Profile', subtitle: 'Account Identity' },
+  '/hackathons': { title: 'Hackathons', subtitle: 'Explore Events' },
+  '/teams': { title: 'Teams', subtitle: 'Manage your team' },
+  '/submissions': { title: 'Submissions', subtitle: 'Manage your projects' },
+  '/leaderboard': { title: 'Leaderboard', subtitle: 'Rankings' },
+  '/profile': { title: 'Profile', subtitle: 'Account settings' },
 }
 
 export default function Navbar() {
@@ -37,14 +36,11 @@ export default function Navbar() {
   }, [])
 
   return (
-    <motion.header 
-      initial={false}
-      animate={{ 
-        height: scrolled ? 64 : 80,
-        backgroundColor: scrolled ? 'rgba(3, 7, 18, 0.8)' : 'rgba(3, 7, 18, 0.4)'
-      }}
+  return (
+    <header 
       className={clsx(
-        'fixed top-0 right-0 z-30 flex items-center transition-all duration-300 backdrop-blur-xl border-b border-white/[0.05]',
+        'fixed top-0 right-0 z-30 flex items-center transition-all duration-300 border-b border-gray-800 bg-gray-900',
+        scrolled ? 'h-16' : 'h-20',
         sidebarCollapsed ? 'left-20' : 'left-0 lg:left-72'
       )}
     >
@@ -61,28 +57,19 @@ export default function Navbar() {
           </button>
 
           <div className="hidden sm:block">
-            <AnimatePresence mode="wait">
-              <motion.div
-                key={pathname}
-                initial={{ opacity: 0, x: -10 }}
-                animate={{ opacity: 1, x: 0 }}
-                exit={{ opacity: 0, x: 10 }}
-                transition={{ duration: 0.2 }}
-              >
-                <h1 className="text-xl font-bold text-white tracking-tight flex items-center gap-2">
-                  {pathname === '/dashboard' ? (
-                    <>
-                      <span>{timeGreeting},</span>
-                      <span className="text-gradient">{firstName}</span>
-                      <span>🚀</span>
-                    </>
-                  ) : pageInfo.title}
-                </h1>
-                <p className="text-[10px] text-slate-500 font-bold uppercase tracking-[0.2em] mt-0.5">
-                  {pageInfo.subtitle}
-                </p>
-              </motion.div>
-            </AnimatePresence>
+            <div>
+              <h1 className="text-xl font-bold text-gray-100 flex items-center gap-2">
+                {pathname === '/dashboard' ? (
+                  <>
+                    <span>{timeGreeting},</span>
+                    <span>{firstName}</span>
+                  </>
+                ) : pageInfo.title}
+              </h1>
+              <p className="text-xs text-gray-400 font-medium mt-0.5">
+                {pageInfo.subtitle}
+              </p>
+            </div>
           </div>
         </div>
 
@@ -95,6 +82,7 @@ export default function Navbar() {
           
         </div>
       </div>
-    </motion.header>
+      </div>
+    </header>
   )
 }

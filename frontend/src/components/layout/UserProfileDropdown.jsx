@@ -109,11 +109,11 @@ export default function UserProfileDropdown() {
 
         {/* Name + role */}
         <div className="hidden sm:flex flex-col items-start leading-tight">
-          <span className="text-[13px] font-bold text-white tracking-tight">
+          <span className="text-sm font-medium text-white tracking-tight">
             {user?.name?.split(' ')[0] || 'User'}
           </span>
-          <span className="text-[10px] text-slate-500 font-semibold uppercase tracking-widest">
-            {user?.role || 'PARTICIPANT'}
+          <span className="text-xs text-gray-400 capitalize">
+            {user?.role ? `Role: ${user.role}` : 'Participant'}
           </span>
         </div>
 
@@ -159,10 +159,10 @@ export default function UserProfileDropdown() {
               <span className="absolute -bottom-0.5 -right-0.5 w-3 h-3 bg-emerald-400 rounded-full border-2 border-[#0e0f17]" />
             </div>
             <div className="min-w-0">
-              <p className="text-[14px] font-bold text-white truncate leading-none tracking-tight">
+              <p className="text-sm font-medium text-white truncate leading-none tracking-tight">
                 {user?.name || 'Guest User'}
               </p>
-              <div className="flex items-center gap-1.5 mt-1.5 opacity-55">
+              <div className="flex items-center gap-1.5 mt-1.5 opacity-70">
                 <Mail className="w-3 h-3 text-slate-400 flex-shrink-0" />
                 <span className="text-[11px] text-slate-400 truncate">
                   {user?.email}
@@ -192,8 +192,8 @@ export default function UserProfileDropdown() {
                   <item.icon className="w-[15px] h-[15px]" />
                 </div>
                 <div className="flex flex-col items-start leading-snug text-left">
-                  <span className="font-semibold text-[13px]">{item.label}</span>
-                  <span className="text-[11px] text-slate-600 group-hover:text-slate-500 transition-colors">
+                  <span className="font-medium text-sm">{item.label}</span>
+                  <span className="text-xs text-gray-500 transition-colors">
                     {item.description}
                   </span>
                 </div>
